@@ -1,0 +1,40 @@
+# Arquivos de controle de versão
+.git
+.gitignore
+
+# Dependências
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Arquivos de build
+dist
+build
+
+# Arquivos de ambiente local
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Arquivos do editor
+.idea
+.vscode
+*.swp
+*.swo
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Outros
+README.md
+DEPLOY.md
+*.log 
