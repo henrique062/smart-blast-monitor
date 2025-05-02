@@ -122,7 +122,7 @@ export default function Templates() {
                 onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Use variáveis como {{nome}} para personalizar a mensagem.
+                Use variáveis como {"{{nome}}"} para personalizar a mensagem.
               </p>
             </div>
             <Button 
