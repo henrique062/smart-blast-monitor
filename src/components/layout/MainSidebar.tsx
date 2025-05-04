@@ -57,31 +57,18 @@ export default function MainSidebar() {
       )}
     >
       {/* Header */}
-      <div className="p-4 border-b border-border flex flex-col items-center">
-        <div className="flex items-center justify-between w-full">
-          {!isCollapsed && (
-            <div className="font-semibold text-lg">Monitor de Disparos</div>
-          )}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className={cn(!isCollapsed ? "ml-auto" : "")}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-        </div>
-        
-        {/* Logo - adicionado abaixo do título */}
+      <div className="p-4 border-b border-border flex items-center justify-between">
         {!isCollapsed && (
-          <div className="mt-4 flex justify-center">
-            <img 
-              src="/lovable-uploads/35980e34-02cc-4efa-9ecd-edb1f27a3358.png" 
-              alt="Logo Antecipa" 
-              className="h-12"
-            />
-          </div>
+          <div className="font-semibold text-lg">Monitor de Disparos</div>
         )}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="ml-auto"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
       </div>
 
       {/* Navigation */}
