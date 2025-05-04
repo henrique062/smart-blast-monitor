@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface DispatchSettings {
   dispatchesPerHour: number;
@@ -14,7 +15,47 @@ interface DispatchSettings {
   randomInterval: boolean;
 }
 
+interface Instance {
+  id: string;
+  name: string;
+  settings: DispatchSettings;
+}
+
 export default function Settings() {
+  const [instances, setInstances] = useState<Instance[]>([
+    {
+      id: "inst1",
+      name: "Instância 1",
+      settings: {
+        dispatchesPerHour: 60,
+        dailyLimit: 1000,
+        interval: 1,
+        randomInterval: false,
+      }
+    },
+    {
+      id: "inst2",
+      name: "Instância 2",
+      settings: {
+        dispatchesPerHour: 120,
+        dailyLimit: 2000,
+        interval: 0.5,
+        randomInterval: true,
+      }
+    },
+    {
+      id: "inst3",
+      name: "Instância 3",
+      settings: {
+        dispatchesPerHour: 30,
+        dailyLimit: 500,
+        interval: 2,
+        randomInterval: false,
+      }
+    }
+  ]);
+  
+  const [currentInstanceId, setCurrentInstanceId] = useState<string>("inst1");
   const [settings, setSettings] = useState<DispatchSettings>({
     dispatchesPerHour: 60,
     dailyLimit: 1000,
@@ -24,8 +65,28 @@ export default function Settings() {
   
   const [isLoading, setIsLoading] = useState(false);
 
+  // Carregar as configurações da instância selecionada
+  useEffect(() => {
+    const selectedInstance = instances.find(inst => inst.id === currentInstanceId);
+    if (selectedInstance) {
+      setSettings(selectedInstance.settings);
+    }
+  }, [currentInstanceId, instances]);
+
+  const handleInstanceChange = (value: string) => {
+    setCurrentInstanceId(value);
+  };
+
   const handleInputChange = (key: keyof DispatchSettings, value: number | boolean) => {
-    setSettings({ ...settings, [key]: value });
+    const updatedSettings = { ...settings, [key]: value };
+    setSettings(updatedSettings);
+    
+    // Atualiza também o objeto de instâncias
+    setInstances(instances.map(inst => 
+      inst.id === currentInstanceId 
+        ? { ...inst, settings: updatedSettings } 
+        : inst
+    ));
   };
 
   const handleSaveSettings = async () => {
@@ -39,7 +100,7 @@ export default function Settings() {
 
     try {
       // In a real app, we'd send to API/webhook
-      console.log("Saving settings:", settings);
+      console.log("Saving settings for instance:", currentInstanceId, settings);
       // Mock API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
@@ -69,6 +130,25 @@ export default function Settings() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="instance">Instância</Label>
+            <Select value={currentInstanceId} onValueChange={handleInstanceChange}>
+              <SelectTrigger className="w-full sm:w-72">
+                <SelectValue placeholder="Selecione a instância" />
+              </SelectTrigger>
+              <SelectContent>
+                {instances.map((instance) => (
+                  <SelectItem key={instance.id} value={instance.id}>
+                    {instance.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              Escolha a instância para configurar os parâmetros específicos.
+            </p>
+          </div>
+
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="dispatchesPerHour">Disparos por Hora</Label>
