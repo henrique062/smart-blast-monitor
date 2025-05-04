@@ -59,13 +59,19 @@ export default function MainSidebar() {
       {/* Header */}
       <div className="p-4 border-b border-border flex items-center justify-between">
         {!isCollapsed && (
-          <div className="font-semibold text-lg">Monitor de Disparos</div>
+          <div className="flex items-center">
+            <img
+              src="/lovable-uploads/0e84b822-6807-468e-b2cd-46027e1fcabc.png"
+              alt="Antecipar Brasil"
+              className="h-8 w-auto max-w-[180px] object-contain"
+            />
+          </div>
         )}
         <Button 
           variant="ghost" 
           size="icon" 
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="ml-auto"
+          className={isCollapsed ? "mx-auto" : "ml-auto"}
         >
           <Menu className="h-5 w-5" />
         </Button>
