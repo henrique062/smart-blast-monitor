@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import * as XLSX from 'xlsx';
 
 export default function Import() {
   const [file, setFile] = useState<File | null>(null);
@@ -31,6 +32,65 @@ export default function Import() {
     setFile(selectedFile);
   };
 
+  // Function to parse CSV files
+  const parseCSV = async (file: File): Promise<Record<string, any>[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const csvText = e.target?.result as string;
+        if (!csvText) {
+          reject(new Error("Falha ao ler arquivo CSV"));
+          return;
+        }
+
+        try {
+          // Parse CSV using XLSX
+          const workbook = XLSX.read(csvText, { type: 'string' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          resolve(jsonData);
+        } catch (error) {
+          console.error("Error parsing CSV:", error);
+          reject(new Error("Erro ao processar arquivo CSV"));
+        }
+      };
+      
+      reader.onerror = () => reject(new Error("Erro na leitura do arquivo"));
+      reader.readAsText(file);
+    });
+  };
+
+  // Function to parse Excel files (XLSX/XLS)
+  const parseExcel = async (file: File): Promise<Record<string, any>[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const data = e.target?.result;
+          if (!data) {
+            reject(new Error("Falha ao ler arquivo Excel"));
+            return;
+          }
+          
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          resolve(jsonData);
+        } catch (error) {
+          console.error("Error parsing Excel:", error);
+          reject(new Error("Erro ao processar arquivo Excel"));
+        }
+      };
+      
+      reader.onerror = () => reject(new Error("Erro na leitura do arquivo"));
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
   const handleUpload = async () => {
     if (!file) {
       toast.error("Selecione um arquivo para importar");
@@ -41,24 +101,51 @@ export default function Import() {
     setUploadProgress(0);
 
     try {
-      // Simulate upload with progress
-      for (let i = 0; i <= 100; i += 10) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        setUploadProgress(i);
+      // Update progress to show processing started
+      setUploadProgress(10);
+
+      // Parse file based on its type
+      let jsonData: Record<string, any>[] = [];
+      
+      if (file.type === 'text/csv') {
+        jsonData = await parseCSV(file);
+      } else {
+        // For Excel files (xlsx/xls)
+        jsonData = await parseExcel(file);
       }
 
-      // In real app, we'd send to webhook
-      console.log("Uploading file to webhook:", file);
-      const formData = new FormData();
-      formData.append("file", file);
+      // Update progress after parsing
+      setUploadProgress(40);
+      
+      // Log data for debugging
+      console.log("Parsed data:", jsonData);
+      
+      if (!jsonData || jsonData.length === 0) {
+        throw new Error("Nenhum dado encontrado no arquivo ou formato inválido");
+      }
 
-      /* 
-      In a real implementation:
-      await fetch("https://n8n-n8n.wju2x4.easypanel.host/webhook/461b8175-1a6d-4259-8048-d36b71f86117", {
+      // Update progress before sending to webhook
+      setUploadProgress(60);
+
+      // Send to webhook
+      const response = await fetch("https://n8n-n8n.wju2x4.easypanel.host/webhook/461b8175-1a6d-4259-8048-d36b71f86117", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contacts: jsonData,
+          filename: file.name,
+          importedAt: new Date().toISOString(),
+        }),
       });
-      */
+
+      // Update progress after sending
+      setUploadProgress(100);
+
+      if (!response.ok) {
+        throw new Error(`Erro ao enviar para webhook: ${response.status}`);
+      }
 
       toast.success("Arquivo importado com sucesso!");
       setFile(null);
@@ -66,8 +153,8 @@ export default function Import() {
         fileInputRef.current.value = "";
       }
     } catch (error) {
-      console.error("Error uploading file:", error);
-      toast.error("Erro ao importar arquivo");
+      console.error("Error processing file:", error);
+      toast.error(error instanceof Error ? error.message : "Erro ao processar o arquivo");
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -129,7 +216,7 @@ export default function Import() {
 
           {isUploading && (
             <div className="mt-4 space-y-2">
-              <p className="text-sm text-center">Importando...</p>
+              <p className="text-sm text-center">Processando arquivo...</p>
               <Progress value={uploadProgress} />
             </div>
           )}
@@ -140,7 +227,7 @@ export default function Import() {
             onClick={handleUpload}
             disabled={!file || isUploading}
           >
-            {isUploading ? "Importando..." : "Importar Contatos"}
+            {isUploading ? "Processando..." : "Importar Contatos"}
           </Button>
         </CardFooter>
       </Card>
