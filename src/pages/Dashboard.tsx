@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchContatos, fetchRecentDisparos, DisparoData } from "@/lib/supabase";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
-import { utcToZonedTime } from "date-fns-tz";
+import { toZonedTime } from "date-fns-tz";
 
 interface BlastData {
   id: string;
@@ -57,7 +57,7 @@ export default function Dashboard() {
     // Convert UTC date to GMT-3 and format it
     const timeZone = 'America/Sao_Paulo'; // GMT-3
     const utcDate = parseISO(disparo.created_at);
-    const zonedDate = utcToZonedTime(utcDate, timeZone);
+    const zonedDate = toZonedTime(utcDate, timeZone);
     const formattedDate = format(zonedDate, 'dd-MM-yy | HH:mm');
     
     return {
