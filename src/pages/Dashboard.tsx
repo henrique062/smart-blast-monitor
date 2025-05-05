@@ -4,7 +4,12 @@ import StatusCard from "@/components/dashboard/StatusCard";
 import BarChart from "@/components/dashboard/BarChart";
 import DataTable, { ColumnDef, StatusType, getStatusBadge } from "@/components/dashboard/DataTable";
 import { useQuery } from "@tanstack/react-query";
-import { fetchContatos, fetchRecentDisparos, DisparoData } from "@/lib/supabase";
+import { 
+  fetchContatos, 
+  fetchRecentDisparos, 
+  fetchDisparosPorInstancia,
+  DisparoData 
+} from "@/lib/supabase";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
@@ -31,6 +36,16 @@ export default function Dashboard() {
     queryFn: fetchRecentDisparos,
   });
 
+  // Fetch dispatch counts by instance from Supabase
+  const { 
+    data: instanciaCountData, 
+    isLoading: isLoadingInstanciaCount, 
+    error: instanciaCountError 
+  } = useQuery({
+    queryKey: ['disparos-por-instancia'],
+    queryFn: fetchDisparosPorInstancia,
+  });
+
   // Show error toast if fetch fails
   useEffect(() => {
     if (contatosError) {
@@ -44,7 +59,13 @@ export default function Dashboard() {
         description: "Não foi possível carregar os dados de disparos do servidor."
       });
     }
-  }, [contatosError, disparosError]);
+
+    if (instanciaCountError) {
+      toast.error("Erro ao carregar dados do gráfico", {
+        description: "Não foi possível carregar os dados de disparos por instância."
+      });
+    }
+  }, [contatosError, disparosError, instanciaCountError]);
 
   // Calculate counts based on the criteria
   const pendingBlasts = contatosData ? contatosData.filter(contato => contato.disparo_agendamento === null).length : 0;
@@ -70,26 +91,7 @@ export default function Dashboard() {
     };
   }) : [];
 
-  const chartData = [
-    { name: "Inst-01", value: 24 },
-    { name: "Inst-02", value: 18 },
-    { name: "Inst-03", value: 12 },
-  ];
-
-  const columns: ColumnDef<BlastData>[] = [
-    { accessorKey: "id", header: "ID do Disparo" },
-    { accessorKey: "name", header: "Nome" },
-    { accessorKey: "phone", header: "Telefone" },
-    { 
-      accessorKey: "status", 
-      header: "Status", 
-      cell: (data) => getStatusBadge(data.status) 
-    },
-    { accessorKey: "date", header: "Data do Disparo" },
-    { accessorKey: "instance", header: "Instância" },
-  ];
-
-  const isLoading = isLoadingContatos || isLoadingDisparos;
+  const isLoading = isLoadingContatos || isLoadingDisparos || isLoadingInstanciaCount;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -134,13 +136,27 @@ export default function Dashboard() {
         </div>
         <div className="lg:col-span-1">
           <BarChart
-            data={chartData}
+            data={isLoadingInstanciaCount ? [] : instanciaCountData || []}
             title="Disparos por Instância"
             color="#3B82F6"
             className="h-full"
+            emptyState={isLoadingInstanciaCount ? "Carregando dados..." : "Nenhum dado de instância encontrado"}
           />
         </div>
       </div>
     </div>
   );
 }
+
+const columns: ColumnDef<BlastData>[] = [
+  { accessorKey: "id", header: "ID do Disparo" },
+  { accessorKey: "name", header: "Nome" },
+  { accessorKey: "phone", header: "Telefone" },
+  { 
+    accessorKey: "status", 
+    header: "Status", 
+    cell: (data) => getStatusBadge(data.getValue() as StatusType) 
+  },
+  { accessorKey: "date", header: "Data do Disparo" },
+  { accessorKey: "instance", header: "Instância" },
+];
