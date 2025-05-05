@@ -155,7 +155,7 @@ const columns: ColumnDef<BlastData>[] = [
   { 
     accessorKey: "status", 
     header: "Status", 
-    cell: (data) => getStatusBadge(data.getValue() as StatusType) 
+    cell: (row) => getStatusBadge(row.status) 
   },
   { accessorKey: "date", header: "Data do Disparo" },
   { accessorKey: "instance", header: "Instância" },
