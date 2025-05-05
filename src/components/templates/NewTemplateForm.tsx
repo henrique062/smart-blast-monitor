@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { createTemplate, Template } from "@/lib/supabase";
+import { Template } from "@/lib/supabase";
 import { v4 as uuidv4 } from "uuid";
 
 interface NewTemplateFormProps {
@@ -39,7 +39,7 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
         action_type: "create" // Specify the action type
       };
       
-      // Send to webhook first
+      // Send to webhook
       const webhookResponse = await fetch("https://n8n-n8n.wju2x4.easypanel.host/webhook/c23921ee-d540-47f7-9833-b882e47254ff", {
         method: "POST",
         headers: {
@@ -50,28 +50,26 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
       
       console.log("Webhook response:", webhookResponse);
       
-      // Check if webhook was successful
-      if (!webhookResponse.ok) {
-        throw new Error(`Webhook error: ${webhookResponse.status}`);
-      }
-      
-      // Only save to database if webhook was successful - remove action_type as it's not needed in DB
-      const dbTemplate = {
-        titulo: templateToSave.titulo,
-        mensagem: templateToSave.mensagem,
-        ativo: templateToSave.ativo
-      };
-      
-      const savedTemplate = await createTemplate(dbTemplate);
-      
-      if (savedTemplate) {
+      // Check webhook response status
+      if (webhookResponse.ok) {
+        // Create a template object to return to the parent component
+        const savedTemplate: Template = {
+          id: templateId,
+          titulo: templateToSave.titulo,
+          mensagem: templateToSave.mensagem,
+          ativo: templateToSave.ativo,
+          deletado: null
+        };
+        
         onTemplateCreated(savedTemplate);
         setNewTemplate({ titulo: "", mensagem: "" });
-        toast.success("Template salvo com sucesso!");
+        toast.success("Template criado com sucesso!");
+      } else {
+        throw new Error(`Erro ao criar template: ${webhookResponse.status}`);
       }
     } catch (error) {
       console.error("Error processing template:", error);
-      toast.error("Erro ao salvar template. Tente novamente.");
+      toast.error("Erro ao criar template");
     } finally {
       setIsLoading(false);
     }

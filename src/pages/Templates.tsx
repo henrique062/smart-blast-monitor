@@ -3,9 +3,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { 
-  fetchTemplates, 
-  updateTemplateStatus, 
-  deleteTemplate,
+  fetchTemplates,
   Template 
 } from "@/lib/supabase";
 import { NewTemplateForm } from "@/components/templates/NewTemplateForm";
@@ -52,9 +50,7 @@ export default function Templates() {
         throw new Error(`Webhook error: ${webhookResponse.status}`);
       }
       
-      // Update database only if webhook was successful
-      await updateTemplateStatus(id, !currentStatus);
-      
+      // Update local state
       const updatedTemplates = templates.map(template => {
         if (template.id === id) {
           return { ...template, ativo: !currentStatus };
@@ -88,9 +84,6 @@ export default function Templates() {
         throw new Error(`Webhook error: ${webhookResponse.status}`);
       }
       
-      // Delete from database only if webhook was successful
-      await deleteTemplate(id);
-
       // Update state by removing the template
       setTemplates(templates.filter(template => template.id !== id));
       toast.success("Template excluído com sucesso!");
