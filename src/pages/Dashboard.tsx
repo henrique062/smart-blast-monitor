@@ -1,10 +1,13 @@
+
 import { useState, useEffect } from "react";
 import StatusCard from "@/components/dashboard/StatusCard";
 import BarChart from "@/components/dashboard/BarChart";
 import DataTable, { ColumnDef, StatusType, getStatusBadge } from "@/components/dashboard/DataTable";
 import { useQuery } from "@tanstack/react-query";
-import { fetchContatos } from "@/lib/supabase";
+import { fetchContatos, fetchRecentDisparos, DisparoData } from "@/lib/supabase";
 import { toast } from "sonner";
+import { format, parseISO } from "date-fns";
+import { utcToZonedTime } from "date-fns-tz";
 
 interface BlastData {
   id: string;
@@ -17,19 +20,31 @@ interface BlastData {
 
 export default function Dashboard() {
   // Fetch contacts data from Supabase
-  const { data: contatosData, isLoading, error } = useQuery({
+  const { data: contatosData, isLoading: isLoadingContatos, error: contatosError } = useQuery({
     queryKey: ['contatos-dashboard'],
     queryFn: fetchContatos,
   });
 
+  // Fetch recent dispatches data from Supabase
+  const { data: disparosData, isLoading: isLoadingDisparos, error: disparosError } = useQuery({
+    queryKey: ['recent-disparos'],
+    queryFn: fetchRecentDisparos,
+  });
+
   // Show error toast if fetch fails
   useEffect(() => {
-    if (error) {
+    if (contatosError) {
       toast.error("Erro ao carregar contatos", {
         description: "Não foi possível carregar os dados do servidor."
       });
     }
-  }, [error]);
+
+    if (disparosError) {
+      toast.error("Erro ao carregar disparos", {
+        description: "Não foi possível carregar os dados de disparos do servidor."
+      });
+    }
+  }, [contatosError, disparosError]);
 
   // Calculate counts based on the criteria
   const pendingBlasts = contatosData ? contatosData.filter(contato => contato.disparo_agendamento === null).length : 0;
@@ -37,17 +52,23 @@ export default function Dashboard() {
   const successBlasts = contatosData ? contatosData.filter(contato => contato.disparo_realizado === true).length : 0;
   const errorBlasts = contatosData ? contatosData.filter(contato => contato.disparo_realizado === false).length : 0;
 
-  // Mock data for the table display - we'll keep this for now as it's just for demonstration
-  const [blastData] = useState<BlastData[]>([
-    { id: "LD001", name: "João Silva", phone: "11999887766", status: "success", date: "2025-05-02 09:15", instance: "Inst-01" },
-    { id: "LD002", name: "Maria Oliveira", phone: "21988776655", status: "in-progress", date: "2025-05-02 09:20", instance: "Inst-02" },
-    { id: "LD003", name: "Pedro Santos", phone: "31977665544", status: "pending", date: "2025-05-02 09:30", instance: "Inst-01" },
-    { id: "LD004", name: "Ana Costa", phone: "41966554433", status: "error", date: "2025-05-02 09:25", instance: "Inst-03" },
-    { id: "LD005", name: "Lucas Pereira", phone: "51955443322", status: "success", date: "2025-05-02 09:10", instance: "Inst-02" },
-    { id: "LD006", name: "Juliana Lima", phone: "61944332211", status: "success", date: "2025-05-02 08:55", instance: "Inst-01" },
-    { id: "LD007", name: "Roberto Alves", phone: "71933221100", status: "pending", date: "2025-05-02 09:40", instance: "Inst-03" },
-    { id: "LD008", name: "Camila Rocha", phone: "81922110099", status: "in-progress", date: "2025-05-02 09:35", instance: "Inst-02" },
-  ]);
+  // Transform disparos data to table format with proper timezone conversion
+  const tableData: BlastData[] = disparosData ? disparosData.map((disparo: DisparoData) => {
+    // Convert UTC date to GMT-3 and format it
+    const timeZone = 'America/Sao_Paulo'; // GMT-3
+    const utcDate = parseISO(disparo.created_at);
+    const zonedDate = utcToZonedTime(utcDate, timeZone);
+    const formattedDate = format(zonedDate, 'dd-MM-yy | HH:mm');
+    
+    return {
+      id: disparo.id,
+      name: disparo.nome,
+      phone: disparo.numero_principal,
+      status: disparo.disparo_principal ? "success" : "error",
+      date: formattedDate,
+      instance: disparo.instancia
+    };
+  }) : [];
 
   const chartData = [
     { name: "Inst-01", value: 24 },
@@ -56,7 +77,7 @@ export default function Dashboard() {
   ];
 
   const columns: ColumnDef<BlastData>[] = [
-    { accessorKey: "id", header: "ID do Lead" },
+    { accessorKey: "id", header: "ID do Disparo" },
     { accessorKey: "name", header: "Nome" },
     { accessorKey: "phone", header: "Telefone" },
     { 
@@ -67,6 +88,8 @@ export default function Dashboard() {
     { accessorKey: "date", header: "Data do Disparo" },
     { accessorKey: "instance", header: "Instância" },
   ];
+
+  const isLoading = isLoadingContatos || isLoadingDisparos;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -104,7 +127,8 @@ export default function Dashboard() {
         <div className="lg:col-span-2">
           <DataTable
             columns={columns}
-            data={blastData}
+            data={isLoadingDisparos ? [] : tableData}
+            emptyState={isLoadingDisparos ? "Carregando disparos..." : "Nenhum disparo encontrado"}
             className="bg-card"
           />
         </div>

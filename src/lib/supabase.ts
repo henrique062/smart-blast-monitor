@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase connection details
@@ -13,6 +12,16 @@ export interface ContatoPrecatorio {
   nome_completo: string;
   disparo_realizado: boolean | null;
   disparo_agendamento: boolean | null;
+}
+
+// Interface para os dados de disparo
+export interface DisparoData {
+  id: string;
+  nome: string;
+  numero_principal: string;
+  disparo_principal: boolean;
+  created_at: string;
+  instancia: string;
 }
 
 // Função para buscar todos os contatos
@@ -38,6 +47,22 @@ export async function searchContatos(searchTerm: string) {
 
   if (error) {
     console.error('Erro ao buscar contatos:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+// Função para buscar os 8 disparos mais recentes
+export async function fetchRecentDisparos() {
+  const { data, error } = await supabase
+    .from('disparos')
+    .select('id, nome, numero_principal, disparo_principal, created_at, instancia')
+    .order('created_at', { ascending: false })
+    .limit(8);
+
+  if (error) {
+    console.error('Erro ao buscar disparos recentes:', error);
     throw error;
   }
 
