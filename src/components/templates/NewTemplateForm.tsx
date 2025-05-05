@@ -16,6 +16,7 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
     titulo: "",
     mensagem: ""
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSaveTemplate = async () => {
     if (!newTemplate.titulo.trim() || !newTemplate.mensagem.trim()) {
@@ -24,12 +25,31 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
     }
 
     try {
+      setIsLoading(true);
+      
       const templateToSave = {
         titulo: newTemplate.titulo,
         mensagem: newTemplate.mensagem,
         ativo: true
       };
-
+      
+      // Send to webhook first
+      const webhookResponse = await fetch("https://n8n-n8n.wju2x4.easypanel.host/webhook/c23921ee-d540-47f7-9833-b882e47254ff", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(templateToSave),
+      });
+      
+      console.log("Webhook response:", webhookResponse);
+      
+      // Check if webhook was successful
+      if (!webhookResponse.ok) {
+        throw new Error(`Webhook error: ${webhookResponse.status}`);
+      }
+      
+      // Only save to database if webhook was successful
       const savedTemplate = await createTemplate(templateToSave);
       
       if (savedTemplate) {
@@ -38,8 +58,10 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
         toast.success("Template salvo com sucesso!");
       }
     } catch (error) {
-      console.error("Error saving template:", error);
-      toast.error("Erro ao salvar template");
+      console.error("Error processing template:", error);
+      toast.error("Erro ao salvar template. Tente novamente.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -52,6 +74,7 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
           placeholder="Ex: Boas-vindas" 
           value={newTemplate.titulo}
           onChange={(e) => setNewTemplate({ ...newTemplate, titulo: e.target.value })}
+          disabled={isLoading}
         />
       </div>
       <div>
@@ -62,6 +85,7 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
           className="min-h-[150px]"
           value={newTemplate.mensagem}
           onChange={(e) => setNewTemplate({ ...newTemplate, mensagem: e.target.value })}
+          disabled={isLoading}
         />
         <p className="text-xs text-muted-foreground mt-1">
           Use variáveis como {"{{nome}}"} para personalizar a mensagem.
@@ -70,8 +94,9 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
       <Button 
         className="w-full" 
         onClick={handleSaveTemplate}
+        disabled={isLoading}
       >
-        Salvar Template
+        {isLoading ? "Salvando..." : "Salvar Template"}
       </Button>
     </div>
   );
