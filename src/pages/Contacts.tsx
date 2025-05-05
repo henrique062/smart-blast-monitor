@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DataTable, { ColumnDef, StatusType, getStatusBadge } from "@/components/dashboard/DataTable";
 import { Input } from "@/components/ui/input";
-import { Search, Check, X } from "lucide-react";
+import { Search, Check, X, Clock, Loader } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { ContatoPrecatorio, fetchContatos, searchContatos } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ interface Contact {
   phone: string;
   status: StatusType | "none";
   inProgress?: boolean; // Adicionado campo para controlar se está em andamento
+  isPending?: boolean;  // Adicionado campo para controlar se está pendente
 }
 
 export default function Contacts() {
@@ -54,7 +55,8 @@ export default function Contacts() {
       name: contato.nome_completo,
       phone: contato.telefone_principal,
       status: getStatusFromDisparo(contato.disparo_realizado),
-      inProgress: contato.disparo_agendamento === true
+      inProgress: contato.disparo_agendamento === true,
+      isPending: contato.disparo_agendamento === null
     }));
   };
 
@@ -68,20 +70,30 @@ export default function Contacts() {
   // Contatos processados
   const processedContacts: Contact[] = contatosData ? mapContatosToContacts(contatosData) : [];
 
-  // Filtrar contatos baseado no status
-  const filterContacts = (status: string | null) => {
-    return processedContacts
-      .filter(contact => 
-        (status === null || 
-         (status === "sent" && contact.status === "success") ||
-         (status === "not-sent" && (contact.status === "none" || contact.status === "error")) ||
-         (status === "in-progress" && contact.inProgress === true))
-      );
+  // Filtrar contatos baseado nos critérios especificados
+  const filterContacts = (filterType: string | null) => {
+    return processedContacts.filter(contact => {
+      if (filterType === null) return true; // Todos os contatos
+      
+      switch (filterType) {
+        case "sent":
+          return contact.status === "success"; // Disparos Enviados: disparo_realizado = TRUE
+        case "not-sent":
+          return contact.status === "error"; // Com Falha: disparo_realizado = FALSE
+        case "in-progress":
+          return contact.inProgress === true; // Em Andamento: disparo_agendamento = TRUE
+        case "pending":
+          return contact.isPending === true; // Disparos Pendentes: disparo_agendamento IS NULL
+        default:
+          return true;
+      }
+    });
   };
 
   const sentContacts = filterContacts("sent");
   const notSentContacts = filterContacts("not-sent");
   const inProgressContacts = filterContacts("in-progress");
+  const pendingContacts = filterContacts("pending");
   const filteredAllContacts = filterContacts(null);
 
   // Definição das colunas
@@ -92,7 +104,11 @@ export default function Contacts() {
       accessorKey: "status", 
       header: "Status", 
       cell: (data) => {
-        if (data.status === "none") {
+        if (data.inProgress === true) {
+          return getStatusBadge("in-progress", <Loader className="mr-1 h-3 w-3" />);
+        } else if (data.isPending === true) {
+          return getStatusBadge("pending", <Clock className="mr-1 h-3 w-3" />);
+        } else if (data.status === "none") {
           return <span className="text-muted-foreground">Sem disparo</span>;
         } else if (data.status === "success") {
           return getStatusBadge(data.status, <Check className="mr-1 h-3 w-3" />);
@@ -126,9 +142,10 @@ export default function Contacts() {
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">Todos ({filteredAllContacts.length})</TabsTrigger>
-          <TabsTrigger value="sent">Com Disparo ({sentContacts.length})</TabsTrigger>
-          <TabsTrigger value="not-sent">Sem Disparo ({notSentContacts.length})</TabsTrigger>
+          <TabsTrigger value="pending">Disparos Pendentes ({pendingContacts.length})</TabsTrigger>
           <TabsTrigger value="in-progress">Em andamento ({inProgressContacts.length})</TabsTrigger>
+          <TabsTrigger value="sent">Disparos Enviados ({sentContacts.length})</TabsTrigger>
+          <TabsTrigger value="not-sent">Com Falha ({notSentContacts.length})</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all" className="space-y-4">
@@ -136,6 +153,15 @@ export default function Contacts() {
             columns={columns}
             data={filteredAllContacts}
             emptyState={isLoading ? "Carregando..." : "Nenhum contato encontrado"}
+            className={isLoading ? "opacity-70 pointer-events-none" : ""}
+          />
+        </TabsContent>
+        
+        <TabsContent value="pending" className="space-y-4">
+          <DataTable
+            columns={columns}
+            data={pendingContacts}
+            emptyState={isLoading ? "Carregando..." : "Nenhum disparo pendente encontrado"}
             className={isLoading ? "opacity-70 pointer-events-none" : ""}
           />
         </TabsContent>
@@ -153,7 +179,7 @@ export default function Contacts() {
           <DataTable
             columns={columns}
             data={notSentContacts}
-            emptyState={isLoading ? "Carregando..." : "Nenhum contato sem disparo encontrado"}
+            emptyState={isLoading ? "Carregando..." : "Nenhum contato com falha encontrado"}
             className={isLoading ? "opacity-70 pointer-events-none" : ""}
           />
         </TabsContent>
