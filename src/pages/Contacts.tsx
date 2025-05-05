@@ -49,7 +49,7 @@ export default function Contacts() {
   // Mapear dados do Supabase para o formato da tabela
   const mapContatosToContacts = (contatos: ContatoPrecatorio[]): Contact[] => {
     return contatos.map(contato => ({
-      id: contato.id,
+      id: contato.telefone_principal, // Usando telefone_principal como ID
       name: contato.nome_completo,
       phone: contato.telefone_principal,
       status: getStatusFromDisparo(contato.disparo_realizado)

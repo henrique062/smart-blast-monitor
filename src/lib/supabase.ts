@@ -9,9 +9,8 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Tipos para os contatos
 export interface ContatoPrecatorio {
-  id: string;
-  nome_completo: string;
   telefone_principal: string;
+  nome_completo: string;
   disparo_realizado: boolean | null;
 }
 
@@ -19,7 +18,7 @@ export interface ContatoPrecatorio {
 export async function fetchContatos() {
   const { data, error } = await supabase
     .from('contatos_precatorios')
-    .select('id, nome_completo, telefone_principal, disparo_realizado');
+    .select('telefone_principal, nome_completo, disparo_realizado');
 
   if (error) {
     console.error('Erro ao buscar contatos:', error);
@@ -33,7 +32,7 @@ export async function fetchContatos() {
 export async function searchContatos(searchTerm: string) {
   const { data, error } = await supabase
     .from('contatos_precatorios')
-    .select('id, nome_completo, telefone_principal, disparo_realizado')
+    .select('telefone_principal, nome_completo, disparo_realizado')
     .or(`nome_completo.ilike.%${searchTerm}%,telefone_principal.ilike.%${searchTerm}%`);
 
   if (error) {
