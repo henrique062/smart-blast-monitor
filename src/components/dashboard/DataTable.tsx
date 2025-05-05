@@ -19,7 +19,7 @@ export interface DataTableProps<T> {
   className?: string;
 }
 
-export const getStatusBadge = (status: StatusType) => {
+export const getStatusBadge = (status: StatusType, icon?: React.ReactNode) => {
   const statusConfig = {
     "pending": { label: "Pendente", variant: "outline" as const },
     "in-progress": { label: "Em Andamento", variant: "secondary" as const },
@@ -30,7 +30,8 @@ export const getStatusBadge = (status: StatusType) => {
   const config = statusConfig[status];
   
   return (
-    <Badge variant={config.variant}>
+    <Badge variant={config.variant} className="flex items-center">
+      {icon}
       {config.label}
     </Badge>
   );

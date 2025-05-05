@@ -1,10 +1,14 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DataTable, { ColumnDef, StatusType, getStatusBadge } from "@/components/dashboard/DataTable";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Check, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ContatoPrecatorio, fetchContatos, searchContatos } from "@/lib/supabase";
+import { toast } from "sonner";
 
+// Interface para mapear os dados do Supabase para o formato da tabela
 interface Contact {
   id: string;
   name: string;
@@ -14,42 +18,81 @@ interface Contact {
 
 export default function Contacts() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   
-  // Mock data for demo
-  const allContacts: Contact[] = [
-    { id: "1", name: "João Silva", phone: "11999887766", status: "success" },
-    { id: "2", name: "Maria Oliveira", phone: "21988776655", status: "error" },
-    { id: "3", name: "Pedro Santos", phone: "31977665544", status: "none" },
-    { id: "4", name: "Ana Costa", phone: "41966554433", status: "in-progress" },
-    { id: "5", name: "Lucas Pereira", phone: "51955443322", status: "success" },
-    { id: "6", name: "Juliana Lima", phone: "61944332211", status: "none" },
-    { id: "7", name: "Roberto Alves", phone: "71933221100", status: "success" },
-    { id: "8", name: "Camila Rocha", phone: "81922110099", status: "pending" },
-    { id: "9", name: "Fernando Silveira", phone: "91911009988", status: "none" },
-    { id: "10", name: "Beatriz Martins", phone: "11900998877", status: "success" },
-  ];
-  
+  // Debounce para a busca
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+  // Consulta para buscar contatos
+  const { data: contatosData, isLoading, error } = useQuery({
+    queryKey: ['contatos', debouncedSearchTerm],
+    queryFn: () => debouncedSearchTerm ? searchContatos(debouncedSearchTerm) : fetchContatos(),
+  });
+
+  // Se ocorrer um erro, mostrar toast
+  useEffect(() => {
+    if (error) {
+      toast.error("Erro ao carregar contatos", {
+        description: "Não foi possível carregar os dados do servidor."
+      });
+    }
+  }, [error]);
+
+  // Mapear dados do Supabase para o formato da tabela
+  const mapContatosToContacts = (contatos: ContatoPrecatorio[]): Contact[] => {
+    return contatos.map(contato => ({
+      id: contato.id,
+      name: contato.nome_completo,
+      phone: contato.telefone_principal,
+      status: getStatusFromDisparo(contato.disparo_realizado)
+    }));
+  };
+
+  // Determinar o status baseado no campo disparo_realizado
+  const getStatusFromDisparo = (disparo: boolean | null): StatusType | "none" => {
+    if (disparo === true) return "success";
+    if (disparo === false) return "error";
+    return "none";
+  };
+
+  // Contatos processados
+  const processedContacts: Contact[] = contatosData ? mapContatosToContacts(contatosData) : [];
+
+  // Definição das colunas
   const columns: ColumnDef<Contact>[] = [
     { accessorKey: "name", header: "Nome" },
     { accessorKey: "phone", header: "Telefone" },
     { 
       accessorKey: "status", 
       header: "Status", 
-      cell: (data) => data.status === "none" ? 
-        <span className="text-muted-foreground">Sem disparo</span> : 
-        getStatusBadge(data.status as StatusType) 
+      cell: (data) => {
+        if (data.status === "none") {
+          return <span className="text-muted-foreground">Sem disparo</span>;
+        } else if (data.status === "success") {
+          return getStatusBadge(data.status, <Check className="mr-1 h-3 w-3" />);
+        } else if (data.status === "error") {
+          return getStatusBadge(data.status, <X className="mr-1 h-3 w-3" />);
+        }
+        return getStatusBadge(data.status);
+      }
     },
   ];
 
-  // Filter contacts based on search and tab status
+  // Filtrar contatos baseado no status
   const filterContacts = (status: string | null) => {
-    return allContacts
+    return processedContacts
       .filter(contact => 
-        (contact.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-         contact.phone.includes(searchTerm)) &&
         (status === null || 
-         (status === "sent" && contact.status !== "none") ||
-         (status === "not-sent" && contact.status === "none"))
+         (status === "sent" && contact.status === "success") ||
+         (status === "not-sent" && (contact.status === "none" || contact.status === "error")))
       );
   };
 
@@ -87,7 +130,8 @@ export default function Contacts() {
           <DataTable
             columns={columns}
             data={filteredAllContacts}
-            emptyState="Nenhum contato encontrado"
+            emptyState={isLoading ? "Carregando..." : "Nenhum contato encontrado"}
+            className={isLoading ? "opacity-70 pointer-events-none" : ""}
           />
         </TabsContent>
         
@@ -95,7 +139,8 @@ export default function Contacts() {
           <DataTable
             columns={columns}
             data={sentContacts}
-            emptyState="Nenhum contato com disparo encontrado"
+            emptyState={isLoading ? "Carregando..." : "Nenhum contato com disparo encontrado"}
+            className={isLoading ? "opacity-70 pointer-events-none" : ""}
           />
         </TabsContent>
         
@@ -103,7 +148,8 @@ export default function Contacts() {
           <DataTable
             columns={columns}
             data={notSentContacts}
-            emptyState="Nenhum contato sem disparo encontrado"
+            emptyState={isLoading ? "Carregando..." : "Nenhum contato sem disparo encontrado"}
+            className={isLoading ? "opacity-70 pointer-events-none" : ""}
           />
         </TabsContent>
       </Tabs>
