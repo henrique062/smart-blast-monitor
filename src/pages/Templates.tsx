@@ -33,8 +33,26 @@ export default function Templates() {
     getTemplates();
   }, []);
 
-  const handleToggleActive = async (id: string, currentStatus: boolean) => {
+  const handleToggleActive = async (id: string, currentStatus: boolean, actionType: string = "toggle_status") => {
     try {
+      // Send to webhook first
+      const webhookResponse = await fetch("https://n8n-n8n.wju2x4.easypanel.host/webhook/c23921ee-d540-47f7-9833-b882e47254ff", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          action_type: actionType,
+          ativo: !currentStatus
+        }),
+      });
+      
+      if (!webhookResponse.ok) {
+        throw new Error(`Webhook error: ${webhookResponse.status}`);
+      }
+      
+      // Update database only if webhook was successful
       await updateTemplateStatus(id, !currentStatus);
       
       const updatedTemplates = templates.map(template => {
@@ -52,8 +70,25 @@ export default function Templates() {
     }
   };
 
-  const handleDeleteTemplate = async (id: string) => {
+  const handleDeleteTemplate = async (id: string, actionType: string = "delete") => {
     try {
+      // Send to webhook first
+      const webhookResponse = await fetch("https://n8n-n8n.wju2x4.easypanel.host/webhook/c23921ee-d540-47f7-9833-b882e47254ff", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          action_type: actionType
+        }),
+      });
+      
+      if (!webhookResponse.ok) {
+        throw new Error(`Webhook error: ${webhookResponse.status}`);
+      }
+      
+      // Delete from database only if webhook was successful
       await deleteTemplate(id);
 
       // Update state by removing the template

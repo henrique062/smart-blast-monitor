@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { createTemplate, Template } from "@/lib/supabase";
+import { v4 as uuidv4 } from "uuid";
 
 interface NewTemplateFormProps {
   onTemplateCreated: (template: Template) => void;
@@ -27,10 +28,15 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
     try {
       setIsLoading(true);
       
+      // Generate a unique ID for the template
+      const templateId = uuidv4();
+      
       const templateToSave = {
+        id: templateId,
         titulo: newTemplate.titulo,
         mensagem: newTemplate.mensagem,
-        ativo: true
+        ativo: true,
+        action_type: "create" // Specify the action type
       };
       
       // Send to webhook first
@@ -49,8 +55,14 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
         throw new Error(`Webhook error: ${webhookResponse.status}`);
       }
       
-      // Only save to database if webhook was successful
-      const savedTemplate = await createTemplate(templateToSave);
+      // Only save to database if webhook was successful - remove action_type as it's not needed in DB
+      const dbTemplate = {
+        titulo: templateToSave.titulo,
+        mensagem: templateToSave.mensagem,
+        ativo: templateToSave.ativo
+      };
+      
+      const savedTemplate = await createTemplate(dbTemplate);
       
       if (savedTemplate) {
         onTemplateCreated(savedTemplate);

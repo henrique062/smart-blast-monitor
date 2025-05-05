@@ -5,8 +5,8 @@ import { TemplateCard } from "./TemplateCard";
 interface TemplatesListProps {
   templates: Template[];
   loading: boolean;
-  onToggleActive: (id: string, currentStatus: boolean) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  onToggleActive: (id: string, currentStatus: boolean, actionType: string) => Promise<void>;
+  onDelete: (id: string, actionType: string) => Promise<void>;
 }
 
 export function TemplatesList({ 

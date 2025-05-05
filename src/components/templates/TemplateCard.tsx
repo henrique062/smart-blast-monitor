@@ -18,8 +18,8 @@ import { Template } from "@/lib/supabase";
 
 interface TemplateCardProps {
   template: Template;
-  onToggleActive: (id: string, currentStatus: boolean) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  onToggleActive: (id: string, currentStatus: boolean, actionType: string) => Promise<void>;
+  onDelete: (id: string, actionType: string) => Promise<void>;
 }
 
 export function TemplateCard({ template, onToggleActive, onDelete }: TemplateCardProps) {
@@ -34,7 +34,7 @@ export function TemplateCard({ template, onToggleActive, onDelete }: TemplateCar
             </span>
             <Switch
               checked={template.ativo}
-              onCheckedChange={() => onToggleActive(template.id, template.ativo)}
+              onCheckedChange={() => onToggleActive(template.id, template.ativo, "toggle_status")}
             />
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -53,7 +53,7 @@ export function TemplateCard({ template, onToggleActive, onDelete }: TemplateCar
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                   <AlertDialogAction 
-                    onClick={() => onDelete(template.id)}
+                    onClick={() => onDelete(template.id, "delete")}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
                     Excluir
