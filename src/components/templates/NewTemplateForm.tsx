@@ -16,7 +16,6 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
     titulo: "",
     mensagem: ""
   });
-  const [isSaving, setIsSaving] = useState(false);
 
   const handleSaveTemplate = async () => {
     if (!newTemplate.titulo.trim() || !newTemplate.mensagem.trim()) {
@@ -25,33 +24,12 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
     }
 
     try {
-      setIsSaving(true);
-      
       const templateToSave = {
         titulo: newTemplate.titulo,
         mensagem: newTemplate.mensagem,
         ativo: true
       };
 
-      // Send data to webhook first
-      const webhookUrl = "https://n8n-n8n.wju2x4.easypanel.host/webhook/c23921ee-d540-47f7-9833-b882e47254ff";
-      const webhookResponse = await fetch(webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(templateToSave),
-      });
-      
-      if (!webhookResponse.ok) {
-        throw new Error("Erro ao enviar dados para o webhook");
-      }
-      
-      // Parse webhook response
-      const webhookData = await webhookResponse.json();
-      console.log("Webhook response:", webhookData);
-      
-      // After webhook confirmation, save to database
       const savedTemplate = await createTemplate(templateToSave);
       
       if (savedTemplate) {
@@ -62,8 +40,6 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
     } catch (error) {
       console.error("Error saving template:", error);
       toast.error("Erro ao salvar template");
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -94,9 +70,8 @@ export function NewTemplateForm({ onTemplateCreated }: NewTemplateFormProps) {
       <Button 
         className="w-full" 
         onClick={handleSaveTemplate}
-        disabled={isSaving}
       >
-        {isSaving ? "Salvando..." : "Salvar Template"}
+        Salvar Template
       </Button>
     </div>
   );
