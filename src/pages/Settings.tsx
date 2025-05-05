@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,7 +24,7 @@ export default function Settings() {
   const [instances, setInstances] = useState<Instance[]>([
     {
       id: "inst1",
-      name: "Instância 1",
+      name: "Diego",
       settings: {
         dispatchesPerHour: 60,
         dailyLimit: 1000,
@@ -35,22 +34,12 @@ export default function Settings() {
     },
     {
       id: "inst2",
-      name: "Instância 2",
+      name: "Diego Pereira",
       settings: {
         dispatchesPerHour: 120,
         dailyLimit: 2000,
         interval: 0.5,
         randomInterval: true,
-      }
-    },
-    {
-      id: "inst3",
-      name: "Instância 3",
-      settings: {
-        dispatchesPerHour: 30,
-        dailyLimit: 500,
-        interval: 2,
-        randomInterval: false,
       }
     }
   ]);
