@@ -1,8 +1,10 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import StatusCard from "@/components/dashboard/StatusCard";
 import BarChart from "@/components/dashboard/BarChart";
 import DataTable, { ColumnDef, StatusType, getStatusBadge } from "@/components/dashboard/DataTable";
+import { useQuery } from "@tanstack/react-query";
+import { fetchContatos } from "@/lib/supabase";
+import { toast } from "sonner";
 
 interface BlastData {
   id: string;
@@ -14,7 +16,28 @@ interface BlastData {
 }
 
 export default function Dashboard() {
-  // Mock data for demonstration
+  // Fetch contacts data from Supabase
+  const { data: contatosData, isLoading, error } = useQuery({
+    queryKey: ['contatos-dashboard'],
+    queryFn: fetchContatos,
+  });
+
+  // Show error toast if fetch fails
+  useEffect(() => {
+    if (error) {
+      toast.error("Erro ao carregar contatos", {
+        description: "Não foi possível carregar os dados do servidor."
+      });
+    }
+  }, [error]);
+
+  // Calculate counts based on the criteria
+  const pendingBlasts = contatosData ? contatosData.filter(contato => contato.disparo_agendamento === null).length : 0;
+  const inProgressBlasts = contatosData ? contatosData.filter(contato => contato.disparo_agendamento === true).length : 0;
+  const successBlasts = contatosData ? contatosData.filter(contato => contato.disparo_realizado === true).length : 0;
+  const errorBlasts = contatosData ? contatosData.filter(contato => contato.disparo_realizado === false).length : 0;
+
+  // Mock data for the table display - we'll keep this for now as it's just for demonstration
   const [blastData] = useState<BlastData[]>([
     { id: "LD001", name: "João Silva", phone: "11999887766", status: "success", date: "2025-05-02 09:15", instance: "Inst-01" },
     { id: "LD002", name: "Maria Oliveira", phone: "21988776655", status: "in-progress", date: "2025-05-02 09:20", instance: "Inst-02" },
@@ -31,12 +54,6 @@ export default function Dashboard() {
     { name: "Inst-02", value: 18 },
     { name: "Inst-03", value: 12 },
   ];
-
-  // Count blasts by status
-  const pendingBlasts = blastData.filter(item => item.status === "pending").length;
-  const inProgressBlasts = blastData.filter(item => item.status === "in-progress").length;
-  const successBlasts = blastData.filter(item => item.status === "success").length;
-  const errorBlasts = blastData.filter(item => item.status === "error").length;
 
   const columns: ColumnDef<BlastData>[] = [
     { accessorKey: "id", header: "ID do Lead" },
@@ -63,22 +80,22 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatusCard
           title="Disparos Pendentes"
-          value={pendingBlasts}
+          value={isLoading ? "..." : pendingBlasts}
           color="info"
         />
         <StatusCard
           title="Disparos em Andamento"
-          value={inProgressBlasts}
+          value={isLoading ? "..." : inProgressBlasts}
           color="warning"
         />
         <StatusCard
           title="Disparos Enviados"
-          value={successBlasts}
+          value={isLoading ? "..." : successBlasts}
           color="success"
         />
         <StatusCard
           title="Disparos com Falha"
-          value={errorBlasts}
+          value={isLoading ? "..." : errorBlasts}
           color="destructive"
         />
       </div>
