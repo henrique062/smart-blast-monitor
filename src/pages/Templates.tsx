@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,6 +5,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 interface Template {
@@ -90,6 +101,27 @@ export default function Templates() {
     }
   };
 
+  const handleDeleteTemplate = async (id: string) => {
+    try {
+      // In a real app, we'd send this to the n8n webhook
+      console.log("Deleting template:", id);
+      await fetch("https://n8n-n8n.wju2x4.easypanel.host/webhook/c23921ee-d540-47f7-9833-b882e47254ff", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id, action: "delete_template" }),
+      });
+
+      // Update state by removing the template
+      setTemplates(templates.filter(template => template.id !== id));
+      toast.success("Template excluído com sucesso!");
+    } catch (error) {
+      console.error("Error deleting template:", error);
+      toast.error("Erro ao excluir template");
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -152,6 +184,31 @@ export default function Templates() {
                         checked={template.isActive}
                         onCheckedChange={() => handleToggleActive(template.id)}
                       />
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir Template</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir o template "{template.name}"?
+                              Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => handleDeleteTemplate(template.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                   <p className="text-sm border rounded-md p-2 bg-muted/50 whitespace-pre-wrap">
