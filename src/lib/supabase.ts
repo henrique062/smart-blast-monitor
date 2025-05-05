@@ -24,6 +24,15 @@ export interface DisparoData {
   instancia: string;
 }
 
+// Template interface
+export interface Template {
+  id: string;
+  titulo: string;
+  mensagem: string;
+  ativo: boolean;
+  deletado: boolean | null;
+}
+
 // Função para buscar todos os contatos
 export async function fetchContatos() {
   const { data, error } = await supabase
@@ -67,4 +76,64 @@ export async function fetchRecentDisparos() {
   }
 
   return data || [];
+}
+
+// Função para buscar templates ativos
+export async function fetchTemplates() {
+  const { data, error } = await supabase
+    .from('templates')
+    .select('*')
+    .or('deletado.is.null,deletado.eq.false');
+
+  if (error) {
+    console.error('Erro ao buscar templates:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+// Função para atualizar o status de um template
+export async function updateTemplateStatus(id: string, ativo: boolean) {
+  const { error } = await supabase
+    .from('templates')
+    .update({ ativo })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Erro ao atualizar status do template:', error);
+    throw error;
+  }
+
+  return true;
+}
+
+// Função para excluir um template
+export async function deleteTemplate(id: string) {
+  const { error } = await supabase
+    .from('templates')
+    .update({ deletado: true })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Erro ao excluir template:', error);
+    throw error;
+  }
+
+  return true;
+}
+
+// Função para criar um novo template
+export async function createTemplate(template: Omit<Template, 'id' | 'deletado'>) {
+  const { data, error } = await supabase
+    .from('templates')
+    .insert([{ ...template, deletado: false }])
+    .select();
+
+  if (error) {
+    console.error('Erro ao criar template:', error);
+    throw error;
+  }
+
+  return data ? data[0] : null;
 }

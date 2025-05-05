@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,77 +19,74 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-
-interface Template {
-  id: string;
-  name: string;
-  content: string;
-  isActive: boolean;
-}
+import { 
+  fetchTemplates, 
+  updateTemplateStatus, 
+  deleteTemplate, 
+  createTemplate,
+  Template 
+} from "@/lib/supabase";
 
 export default function Templates() {
-  const [templates, setTemplates] = useState<Template[]>([
-    { id: "1", name: "Boas-vindas", content: "Olá {{nome}}, seja bem-vindo(a)! Estamos felizes em ter você conosco.", isActive: true },
-    { id: "2", name: "Confirmação", content: "Olá {{nome}}, sua vaga foi confirmada! Aguardamos você no dia {{data}} às {{hora}}.", isActive: true },
-    { id: "3", name: "Agradecimento", content: "Olá {{nome}}, obrigado por participar. Sua presença foi muito importante para nós.", isActive: false },
-  ]);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [newTemplate, setNewTemplate] = useState({
-    name: "",
-    content: ""
+    titulo: "",
+    mensagem: ""
   });
 
+  // Fetch templates on component mount
+  useEffect(() => {
+    const getTemplates = async () => {
+      try {
+        setLoading(true);
+        const templatesData = await fetchTemplates();
+        setTemplates(templatesData);
+      } catch (error) {
+        console.error("Error fetching templates:", error);
+        toast.error("Erro ao carregar templates");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getTemplates();
+  }, []);
+
   const handleSaveTemplate = async () => {
-    if (!newTemplate.name.trim() || !newTemplate.content.trim()) {
+    if (!newTemplate.titulo.trim() || !newTemplate.mensagem.trim()) {
       toast.error("Preencha todos os campos");
       return;
     }
 
-    // Normally would save via API, here we're just updating state
     try {
       const templateToSave = {
-        id: Date.now().toString(),
-        name: newTemplate.name,
-        content: newTemplate.content,
-        isActive: true
+        titulo: newTemplate.titulo,
+        mensagem: newTemplate.mensagem,
+        ativo: true
       };
 
-      // In a real app, we'd send this to the n8n webhook
-      console.log("Sending template to webhook:", templateToSave);
-      await fetch("https://n8n-n8n.wju2x4.easypanel.host/webhook/c23921ee-d540-47f7-9833-b882e47254ff", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(templateToSave),
-      });
-
-      setTemplates([...templates, templateToSave]);
-      setNewTemplate({ name: "", content: "" });
-      toast.success("Template salvo com sucesso!");
+      const savedTemplate = await createTemplate(templateToSave);
+      
+      if (savedTemplate) {
+        setTemplates([...templates, savedTemplate]);
+        setNewTemplate({ titulo: "", mensagem: "" });
+        toast.success("Template salvo com sucesso!");
+      }
     } catch (error) {
       console.error("Error saving template:", error);
       toast.error("Erro ao salvar template");
     }
   };
 
-  const handleToggleActive = async (id: string) => {
+  const handleToggleActive = async (id: string, currentStatus: boolean) => {
     try {
+      await updateTemplateStatus(id, !currentStatus);
+      
       const updatedTemplates = templates.map(template => {
         if (template.id === id) {
-          const updatedTemplate = { ...template, isActive: !template.isActive };
-          
-          // In a real app, we'd send this to the n8n webhook
-          console.log("Updating template status:", updatedTemplate);
-          fetch("https://n8n-n8n.wju2x4.easypanel.host/webhook/c23921ee-d540-47f7-9833-b882e47254ff", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ ...updatedTemplate, action: "update_status" }),
-          });
-          
-          return updatedTemplate;
+          return { ...template, ativo: !currentStatus };
         }
         return template;
       });
@@ -103,15 +101,7 @@ export default function Templates() {
 
   const handleDeleteTemplate = async (id: string) => {
     try {
-      // In a real app, we'd send this to the n8n webhook
-      console.log("Deleting template:", id);
-      await fetch("https://n8n-n8n.wju2x4.easypanel.host/webhook/c23921ee-d540-47f7-9833-b882e47254ff", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id, action: "delete_template" }),
-      });
+      await deleteTemplate(id);
 
       // Update state by removing the template
       setTemplates(templates.filter(template => template.id !== id));
@@ -140,8 +130,8 @@ export default function Templates() {
               <Input 
                 id="template-name"
                 placeholder="Ex: Boas-vindas" 
-                value={newTemplate.name}
-                onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
+                value={newTemplate.titulo}
+                onChange={(e) => setNewTemplate({ ...newTemplate, titulo: e.target.value })}
               />
             </div>
             <div>
@@ -150,8 +140,8 @@ export default function Templates() {
                 id="template-content"
                 placeholder="Ex: Olá {{nome}}, seja bem-vindo(a)!" 
                 className="min-h-[150px]"
-                value={newTemplate.content}
-                onChange={(e) => setNewTemplate({ ...newTemplate, content: e.target.value })}
+                value={newTemplate.mensagem}
+                onChange={(e) => setNewTemplate({ ...newTemplate, mensagem: e.target.value })}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Use variáveis como {"{{nome}}"} para personalizar a mensagem.
@@ -168,21 +158,23 @@ export default function Templates() {
         
         <div className="space-y-4">
           <h2 className="text-lg font-medium">Templates Salvos</h2>
-          {templates.length === 0 ? (
+          {loading ? (
+            <p className="text-muted-foreground">Carregando templates...</p>
+          ) : templates.length === 0 ? (
             <p className="text-muted-foreground">Nenhum template salvo.</p>
           ) : (
             templates.map((template) => (
               <Card key={template.id} className="overflow-hidden">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-medium">{template.name}</h3>
+                    <h3 className="font-medium">{template.titulo}</h3>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">
-                        {template.isActive ? "Ativo" : "Inativo"}
+                        {template.ativo ? "Ativo" : "Inativo"}
                       </span>
                       <Switch
-                        checked={template.isActive}
-                        onCheckedChange={() => handleToggleActive(template.id)}
+                        checked={template.ativo}
+                        onCheckedChange={() => handleToggleActive(template.id, template.ativo)}
                       />
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -194,7 +186,7 @@ export default function Templates() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Excluir Template</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Tem certeza que deseja excluir o template "{template.name}"?
+                              Tem certeza que deseja excluir o template "{template.titulo}"?
                               Esta ação não pode ser desfeita.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
@@ -212,7 +204,7 @@ export default function Templates() {
                     </div>
                   </div>
                   <p className="text-sm border rounded-md p-2 bg-muted/50 whitespace-pre-wrap">
-                    {template.content}
+                    {template.mensagem}
                   </p>
                 </CardContent>
               </Card>
