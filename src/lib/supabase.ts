@@ -12,13 +12,14 @@ export interface ContatoPrecatorio {
   telefone_principal: string;
   nome_completo: string;
   disparo_realizado: boolean | null;
+  disparo_agendamento: boolean | null;
 }
 
 // Função para buscar todos os contatos
 export async function fetchContatos() {
   const { data, error } = await supabase
     .from('contatos_precatorios')
-    .select('telefone_principal, nome_completo, disparo_realizado');
+    .select('telefone_principal, nome_completo, disparo_realizado, disparo_agendamento');
 
   if (error) {
     console.error('Erro ao buscar contatos:', error);
@@ -32,7 +33,7 @@ export async function fetchContatos() {
 export async function searchContatos(searchTerm: string) {
   const { data, error } = await supabase
     .from('contatos_precatorios')
-    .select('telefone_principal, nome_completo, disparo_realizado')
+    .select('telefone_principal, nome_completo, disparo_realizado, disparo_agendamento')
     .or(`nome_completo.ilike.%${searchTerm}%,telefone_principal.ilike.%${searchTerm}%`);
 
   if (error) {

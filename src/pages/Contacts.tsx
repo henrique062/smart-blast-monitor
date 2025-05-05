@@ -14,6 +14,7 @@ interface Contact {
   name: string;
   phone: string;
   status: StatusType | "none";
+  inProgress?: boolean; // Adicionado campo para controlar se está em andamento
 }
 
 export default function Contacts() {
@@ -52,7 +53,8 @@ export default function Contacts() {
       id: contato.telefone_principal, // Usando telefone_principal como ID
       name: contato.nome_completo,
       phone: contato.telefone_principal,
-      status: getStatusFromDisparo(contato.disparo_realizado)
+      status: getStatusFromDisparo(contato.disparo_realizado),
+      inProgress: contato.disparo_agendamento === true
     }));
   };
 
@@ -65,6 +67,22 @@ export default function Contacts() {
 
   // Contatos processados
   const processedContacts: Contact[] = contatosData ? mapContatosToContacts(contatosData) : [];
+
+  // Filtrar contatos baseado no status
+  const filterContacts = (status: string | null) => {
+    return processedContacts
+      .filter(contact => 
+        (status === null || 
+         (status === "sent" && contact.status === "success") ||
+         (status === "not-sent" && (contact.status === "none" || contact.status === "error")) ||
+         (status === "in-progress" && contact.inProgress === true))
+      );
+  };
+
+  const sentContacts = filterContacts("sent");
+  const notSentContacts = filterContacts("not-sent");
+  const inProgressContacts = filterContacts("in-progress");
+  const filteredAllContacts = filterContacts(null);
 
   // Definição das colunas
   const columns: ColumnDef<Contact>[] = [
@@ -85,20 +103,6 @@ export default function Contacts() {
       }
     },
   ];
-
-  // Filtrar contatos baseado no status
-  const filterContacts = (status: string | null) => {
-    return processedContacts
-      .filter(contact => 
-        (status === null || 
-         (status === "sent" && contact.status === "success") ||
-         (status === "not-sent" && (contact.status === "none" || contact.status === "error")))
-      );
-  };
-
-  const sentContacts = filterContacts("sent");
-  const notSentContacts = filterContacts("not-sent");
-  const filteredAllContacts = filterContacts(null);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -124,6 +128,7 @@ export default function Contacts() {
           <TabsTrigger value="all">Todos ({filteredAllContacts.length})</TabsTrigger>
           <TabsTrigger value="sent">Com Disparo ({sentContacts.length})</TabsTrigger>
           <TabsTrigger value="not-sent">Sem Disparo ({notSentContacts.length})</TabsTrigger>
+          <TabsTrigger value="in-progress">Em andamento ({inProgressContacts.length})</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all" className="space-y-4">
@@ -149,6 +154,15 @@ export default function Contacts() {
             columns={columns}
             data={notSentContacts}
             emptyState={isLoading ? "Carregando..." : "Nenhum contato sem disparo encontrado"}
+            className={isLoading ? "opacity-70 pointer-events-none" : ""}
+          />
+        </TabsContent>
+        
+        <TabsContent value="in-progress" className="space-y-4">
+          <DataTable
+            columns={columns}
+            data={inProgressContacts}
+            emptyState={isLoading ? "Carregando..." : "Nenhum contato em andamento encontrado"}
             className={isLoading ? "opacity-70 pointer-events-none" : ""}
           />
         </TabsContent>
