@@ -8,6 +8,7 @@ import {
   fetchContatos, 
   fetchRecentDisparos, 
   fetchDisparosPorInstancia,
+  fetchDisparosEmAndamento,
   DisparoData 
 } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -28,6 +29,16 @@ export default function Dashboard() {
   const { data: contatosData, isLoading: isLoadingContatos, error: contatosError } = useQuery({
     queryKey: ['contatos-dashboard'],
     queryFn: fetchContatos,
+  });
+
+  // Fetch em andamento count from Supabase
+  const { 
+    data: disparosEmAndamentoCount, 
+    isLoading: isLoadingEmAndamento, 
+    error: disparosEmAndamentoError 
+  } = useQuery({
+    queryKey: ['disparos-em-andamento'],
+    queryFn: fetchDisparosEmAndamento,
   });
 
   // Fetch recent dispatches data from Supabase
@@ -65,11 +76,16 @@ export default function Dashboard() {
         description: "Não foi possível carregar os dados de disparos por instância."
       });
     }
-  }, [contatosError, disparosError, instanciaCountError]);
+
+    if (disparosEmAndamentoError) {
+      toast.error("Erro ao carregar disparos em andamento", {
+        description: "Não foi possível carregar a contagem de disparos em andamento."
+      });
+    }
+  }, [contatosError, disparosError, instanciaCountError, disparosEmAndamentoError]);
 
   // Calculate counts based on the criteria
   const pendingBlasts = contatosData ? contatosData.filter(contato => contato.disparo_agendamento === null).length : 0;
-  const inProgressBlasts = contatosData ? contatosData.filter(contato => contato.disparo_agendamento === true).length : 0;
   const successBlasts = contatosData ? contatosData.filter(contato => contato.disparo_realizado === true).length : 0;
   const errorBlasts = contatosData ? contatosData.filter(contato => contato.disparo_realizado === false).length : 0;
 
@@ -91,7 +107,7 @@ export default function Dashboard() {
     };
   }) : [];
 
-  const isLoading = isLoadingContatos || isLoadingDisparos || isLoadingInstanciaCount;
+  const isLoading = isLoadingContatos || isLoadingDisparos || isLoadingInstanciaCount || isLoadingEmAndamento;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -110,7 +126,7 @@ export default function Dashboard() {
         />
         <StatusCard
           title="Disparos em Andamento"
-          value={isLoading ? "..." : inProgressBlasts}
+          value={isLoading ? "..." : disparosEmAndamentoCount}
           color="warning"
         />
         <StatusCard

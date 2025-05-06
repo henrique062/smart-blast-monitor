@@ -53,6 +53,22 @@ export async function fetchContatos() {
   return data || [];
 }
 
+// Função específica para buscar disparos em andamento
+export async function fetchDisparosEmAndamento() {
+  const { data, error } = await supabase
+    .from('contatos_precatorios')
+    .select('count')
+    .eq('disparo_agendamento', true)
+    .is('disparo_realizado', null);
+
+  if (error) {
+    console.error('Erro ao buscar disparos em andamento:', error);
+    throw error;
+  }
+
+  return data?.[0]?.count || 0;
+}
+
 // Função para buscar contatos com filtro de texto
 export async function searchContatos(searchTerm: string) {
   const { data, error } = await supabase
