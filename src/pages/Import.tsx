@@ -1,8 +1,7 @@
-
 import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
+import { Upload, FileJson } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import * as XLSX from 'xlsx';
@@ -21,11 +20,12 @@ export default function Import() {
     const validTypes = [
       'text/csv',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // xlsx
-      'application/vnd.ms-excel' // xls
+      'application/vnd.ms-excel', // xls
+      'application/json' // json
     ];
     
     if (!validTypes.includes(selectedFile.type)) {
-      toast.error("Formato de arquivo inválido. Use CSV, XLSX ou XLS.");
+      toast.error("Formato de arquivo inválido. Use CSV, XLSX, XLS ou JSON.");
       return;
     }
 
@@ -91,6 +91,35 @@ export default function Import() {
     });
   };
 
+  // Function to parse JSON files
+  const parseJSON = async (file: File): Promise<Record<string, any>[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const jsonText = e.target?.result as string;
+          if (!jsonText) {
+            reject(new Error("Falha ao ler arquivo JSON"));
+            return;
+          }
+          
+          const jsonData = JSON.parse(jsonText);
+          
+          // Handle both array and object formats
+          const dataArray = Array.isArray(jsonData) ? jsonData : [jsonData];
+          resolve(dataArray);
+        } catch (error) {
+          console.error("Error parsing JSON:", error);
+          reject(new Error("Erro ao processar arquivo JSON"));
+        }
+      };
+      
+      reader.onerror = () => reject(new Error("Erro na leitura do arquivo"));
+      reader.readAsText(file);
+    });
+  };
+
   const handleUpload = async () => {
     if (!file) {
       toast.error("Selecione um arquivo para importar");
@@ -106,12 +135,18 @@ export default function Import() {
 
       // Parse file based on its type
       let jsonData: Record<string, any>[] = [];
+      let tipoImportacao = "planilha";
       
-      if (file.type === 'text/csv') {
+      if (file.type === 'application/json') {
+        jsonData = await parseJSON(file);
+        tipoImportacao = "json";
+      } else if (file.type === 'text/csv') {
         jsonData = await parseCSV(file);
+        tipoImportacao = "planilha";
       } else {
         // For Excel files (xlsx/xls)
         jsonData = await parseExcel(file);
+        tipoImportacao = "planilha";
       }
 
       // Update progress after parsing
@@ -137,6 +172,7 @@ export default function Import() {
           contacts: jsonData,
           filename: file.name,
           importedAt: new Date().toISOString(),
+          tipoImportacao: tipoImportacao,
         }),
       });
 
@@ -161,12 +197,23 @@ export default function Import() {
     }
   };
 
+  // Determine the file type for UI display
+  const getFileTypeIcon = () => {
+    if (!file) return <Upload className="h-10 w-10 text-muted-foreground mb-4" />;
+    
+    if (file.type === 'application/json') {
+      return <FileJson className="h-10 w-10 text-muted-foreground mb-4" />;
+    } else {
+      return <Upload className="h-10 w-10 text-muted-foreground mb-4" />;
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Importação de Contatos</h1>
         <p className="text-muted-foreground">
-          Enviar novos contatos para o sistema por planilha.
+          Enviar novos contatos para o sistema por planilha ou arquivo JSON.
         </p>
       </div>
       
@@ -174,24 +221,24 @@ export default function Import() {
         <CardHeader>
           <CardTitle>Upload de Arquivos</CardTitle>
           <CardDescription>
-            Importe contatos para o sistema através de arquivos CSV, XLSX ou XLS.
+            Importe contatos para o sistema através de arquivos CSV, XLSX, XLS ou JSON.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-12 text-center">
-            <Upload className="h-10 w-10 text-muted-foreground mb-4" />
+            {getFileTypeIcon()}
             <p className="text-sm text-muted-foreground mb-2">
               Arraste e solte seu arquivo aqui, ou clique para selecionar
             </p>
             <p className="text-xs text-muted-foreground">
-              Formatos aceitos: CSV, XLSX, XLS
+              Formatos aceitos: CSV, XLSX, XLS, JSON
             </p>
             
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileChange}
-              accept=".csv,.xlsx,.xls"
+              accept=".csv,.xlsx,.xls,.json"
               className="hidden"
               id="file-upload"
               disabled={isUploading}
