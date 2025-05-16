@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Instancia } from "@/lib/supabase";
+import { Instancia, fetchParametrosDisparoPorInstancia } from "@/lib/supabase";
 
 // Define the parameter types
 export interface DispatchParams {
@@ -16,23 +16,42 @@ export function useDispatchParams(instancias: Instancia[] | undefined) {
   const { data: paramsData, isLoading: isLoadingParams } = useQuery({
     queryKey: ['parametros_disparo'],
     queryFn: async () => {
-      // This would be replaced with a real API call to fetch parameters
-      // Mocking data for now
-      const mockData: Record<string, DispatchParams> = {};
+      // Create a record to store parameters for each instance
+      const result: Record<string, DispatchParams> = {};
       
-      // Create mock parameters for each instance
+      // Fetch parameters for each instance
       if (instancias) {
-        instancias.forEach(inst => {
-          mockData[inst.id] = {
-            id_instancia: inst.id,
-            bot_ativo: Math.random() > 0.5, // Random status for demo
-            horario_inicio: "08:00",
-            horario_fim: "18:00",
-          };
-        });
+        for (const inst of instancias) {
+          try {
+            // Use the Supabase function to fetch params for this instance
+            const params = await fetchParametrosDisparoPorInstancia(inst.id);
+            
+            // If we got data back, add it to our result
+            if (params) {
+              result[inst.id] = params as DispatchParams;
+            } else {
+              // Default values if no params exist yet
+              result[inst.id] = {
+                id_instancia: inst.id,
+                bot_ativo: false,
+                horario_inicio: "08:00",
+                horario_fim: "18:00",
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching parameters for instance ${inst.id}:`, error);
+            // Default values on error
+            result[inst.id] = {
+              id_instancia: inst.id,
+              bot_ativo: false,
+              horario_inicio: "08:00",
+              horario_fim: "18:00",
+            };
+          }
+        }
       }
       
-      return mockData;
+      return result;
     },
     enabled: !!instancias && instancias.length > 0,
   });

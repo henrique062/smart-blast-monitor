@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
+import { Badge } from "@/components/ui/badge";
 import { Instancia } from "@/lib/supabase";
 
 interface InstanceScheduleCardProps {
@@ -18,6 +19,7 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
   // Local states for this card
   const [startTime, setStartTime] = useState(initialTimeStart);
   const [endTime, setEndTime] = useState(initialTimeEnd);
+  const [isActive, setIsActive] = useState(botAtivo);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({
     manual: false,
     stop: false,
@@ -43,7 +45,7 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
 
     try {
       // Send to webhook
-      const response = await fetch('https://n8n-n8n.wju2x4.easypanel.host/webhook/parametros', {
+      const response = await fetch('https://n8n-n8n.wju2x4.easypanel.host/webhook/agendamento_disparos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -54,7 +56,17 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
       const data = await response.json();
       
       if (data.status === "200" || response.ok) {
-        toast.success("Operação realizada com sucesso!");
+        // Update local active state based on action
+        setIsActive(action !== 'stop');
+        
+        // Show appropriate success message
+        if (action === 'manual') {
+          toast.success("Bot ativado com sucesso!");
+        } else if (action === 'stop') {
+          toast.success("Bot desativado com sucesso!");
+        } else {
+          toast.success("Agendamento salvo com sucesso!");
+        }
       } else {
         toast.error(`Erro: ${data.message || 'Falha ao processar a solicitação'}`);
       }
@@ -72,10 +84,12 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           {instance.formatado}
-          <div 
-            className={`rounded-full w-3 h-3 ${botAtivo ? 'bg-green-500' : 'bg-red-500'}`} 
-            title={botAtivo ? "Bot Ativo" : "Bot Inativo"}
-          />
+          <Badge 
+            variant={isActive ? "success" : "destructive"} 
+            className="ml-2"
+          >
+            {isActive ? "Ativo" : "Desativado"}
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -106,7 +120,7 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
         <Button
           size="sm"
           onClick={() => handleAction('manual')}
-          disabled={isAnyActionInProgress}
+          disabled={isAnyActionInProgress || isActive}
         >
           {loadingStates.manual ? (
             <span className="animate-pulse">Ativando...</span>
@@ -121,7 +135,7 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
           size="sm" 
           variant="destructive"
           onClick={() => handleAction('stop')}
-          disabled={isAnyActionInProgress}
+          disabled={isAnyActionInProgress || !isActive}
         >
           {loadingStates.stop ? (
             <span className="animate-pulse">Parando...</span>
