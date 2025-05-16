@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase connection details
@@ -45,6 +46,16 @@ export interface Instancia {
   nome: string;
   numero: string;
   formatado: string; // Nome - Número
+}
+
+// Interface para parâmetros de disparo
+export interface ParametrosDisparo {
+  id: string;
+  id_instancia: string;
+  bot_ativo: boolean;
+  horario_inicio: string | null;
+  horario_fim: string | null;
+  created_at: string;
 }
 
 // Função para buscar todos os contatos
@@ -157,6 +168,51 @@ export async function fetchInstancias() {
   })) || [];
 
   return formattedData;
+}
+
+// Função para buscar parâmetros de disparo por instância
+export async function fetchParametrosDisparo() {
+  const { data, error } = await supabase
+    .from('parametros_disparo')
+    .select('*');
+
+  if (error) {
+    console.error('Erro ao buscar parâmetros de disparo:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+// Função para buscar parâmetros de disparo de uma instância específica
+export async function fetchParametrosDisparoPorInstancia(idInstancia: string) {
+  const { data, error } = await supabase
+    .from('parametros_disparo')
+    .select('*')
+    .eq('id_instancia', idInstancia)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+    console.error('Erro ao buscar parâmetros de disparo:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+// Função para atualizar parâmetros de disparo
+export async function updateParametrosDisparo(params: Partial<ParametrosDisparo>) {
+  const { data, error } = await supabase
+    .from('parametros_disparo')
+    .upsert([params])
+    .select();
+
+  if (error) {
+    console.error('Erro ao atualizar parâmetros de disparo:', error);
+    throw error;
+  }
+
+  return data?.[0];
 }
 
 // Função para buscar templates ativos

@@ -1,8 +1,10 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { BarChart, FileText, Settings, Users, Upload, Menu } from "lucide-react";
+import { BarChart, FileText, Settings, Users, Upload, Menu, Clock } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+
 interface SidebarItemProps {
   icon: React.ElementType;
   label: string;
@@ -10,6 +12,7 @@ interface SidebarItemProps {
   isActive: boolean;
   isSidebarCollapsed: boolean;
 }
+
 const SidebarItem = ({
   icon: Icon,
   label,
@@ -22,6 +25,7 @@ const SidebarItem = ({
       {!isSidebarCollapsed && <span>{label}</span>}
     </Link>;
 };
+
 export default function MainSidebar() {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -38,6 +42,10 @@ export default function MainSidebar() {
     label: "Contatos",
     href: "/contacts"
   }, {
+    icon: Clock,
+    label: "Agendamento de Disparos",
+    href: "/schedule-dispatch"
+  }, {
     icon: Settings,
     label: "Configurações",
     href: "/settings"
@@ -46,6 +54,7 @@ export default function MainSidebar() {
     label: "Importar",
     href: "/import"
   }];
+
   return <div className={cn("flex flex-col border-r border-border bg-card h-screen transition-all duration-300", isCollapsed ? "w-16" : "w-64")}>
       {/* Header */}
       <div className="p-4 border-b border-border flex items-center justify-between">

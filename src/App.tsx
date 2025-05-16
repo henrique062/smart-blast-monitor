@@ -10,6 +10,7 @@ import Templates from "./pages/Templates";
 import Contacts from "./pages/Contacts";
 import Settings from "./pages/Settings";
 import Import from "./pages/Import";
+import ScheduleDispatch from "./pages/ScheduleDispatch";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
           <Route path="/templates" element={<DashboardLayout><Templates /></DashboardLayout>} />
           <Route path="/contacts" element={<DashboardLayout><Contacts /></DashboardLayout>} />
+          <Route path="/schedule-dispatch" element={<DashboardLayout><ScheduleDispatch /></DashboardLayout>} />
           <Route path="/settings" element={<DashboardLayout><Settings /></DashboardLayout>} />
           <Route path="/import" element={<DashboardLayout><Import /></DashboardLayout>} />
           <Route path="*" element={<NotFound />} />
