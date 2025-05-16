@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase connection details
@@ -51,7 +50,7 @@ export interface Instancia {
 // Interface para parâmetros de disparo
 export interface ParametrosDisparo {
   id: string;
-  id_instancia: string;
+  instancia_nome: string;  // Changed from id_instancia to instancia_nome
   bot_ativo: boolean;
   horario_inicio: string | null;
   horario_fim: string | null;
@@ -170,7 +169,7 @@ export async function fetchInstancias() {
   return formattedData;
 }
 
-// Função para buscar parâmetros de disparo por instância
+// Função para buscar parâmetros de disparo
 export async function fetchParametrosDisparo() {
   const { data, error } = await supabase
     .from('parametros_disparo')
@@ -185,11 +184,11 @@ export async function fetchParametrosDisparo() {
 }
 
 // Função para buscar parâmetros de disparo de uma instância específica
-export async function fetchParametrosDisparoPorInstancia(idInstancia: string) {
+export async function fetchParametrosDisparoPorInstancia(instanciaNome: string) {
   const { data, error } = await supabase
     .from('parametros_disparo')
     .select('*')
-    .eq('id_instancia', idInstancia)
+    .eq('instancia_nome', instanciaNome)
     .single();
 
   if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"

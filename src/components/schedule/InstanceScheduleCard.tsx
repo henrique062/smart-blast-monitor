@@ -38,6 +38,7 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
     const payload = {
       tipo: action === 'manual' ? 'Manual' : action === 'schedule' ? 'Agendamento' : 'Manual',
       instancia: instance.formatado,
+      instancia_nome: instance.nome,  // Added to match the new structure
       horario_inicio: startTime || "08:00",
       horario_fim: endTime || "18:00",
       bot_ativo: action !== 'stop'
