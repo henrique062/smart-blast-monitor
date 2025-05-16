@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { fetchInstancias, Instancia } from "@/lib/supabase";
 
 interface DispatchSettings {
   dispatchesPerHour: number;
@@ -14,37 +17,15 @@ interface DispatchSettings {
   randomInterval: boolean;
 }
 
-interface Instance {
+interface InstanceWithSettings {
   id: string;
   name: string;
   settings: DispatchSettings;
 }
 
 export default function Settings() {
-  const [instances, setInstances] = useState<Instance[]>([
-    {
-      id: "inst1",
-      name: "Diego",
-      settings: {
-        dispatchesPerHour: 60,
-        dailyLimit: 1000,
-        interval: 1,
-        randomInterval: false,
-      }
-    },
-    {
-      id: "inst2",
-      name: "Diego Pereira",
-      settings: {
-        dispatchesPerHour: 120,
-        dailyLimit: 2000,
-        interval: 0.5,
-        randomInterval: true,
-      }
-    }
-  ]);
-  
-  const [currentInstanceId, setCurrentInstanceId] = useState<string>("inst1");
+  const [instancesWithSettings, setInstancesWithSettings] = useState<InstanceWithSettings[]>([]);
+  const [currentInstanceId, setCurrentInstanceId] = useState<string>("");
   const [settings, setSettings] = useState<DispatchSettings>({
     dispatchesPerHour: 60,
     dailyLimit: 1000,
@@ -54,16 +35,57 @@ export default function Settings() {
   
   const [isLoading, setIsLoading] = useState(false);
 
-  // Carregar as configurações da instância selecionada
+  // Buscar instâncias do banco de dados
+  const { 
+    data: instanciasData, 
+    isLoading: isLoadingInstancias,
+    error: instanciasError
+  } = useQuery({
+    queryKey: ['instancias-settings'],
+    queryFn: fetchInstancias,
+  });
+
+  // Inicializar as instâncias com configurações padrão
   useEffect(() => {
-    const selectedInstance = instances.find(inst => inst.id === currentInstanceId);
-    if (selectedInstance) {
-      setSettings(selectedInstance.settings);
+    if (instanciasData && instanciasData.length > 0) {
+      const instancesWithDefaultSettings = instanciasData.map(inst => ({
+        id: inst.id,
+        name: inst.formatado,
+        settings: {
+          dispatchesPerHour: 60,
+          dailyLimit: 1000,
+          interval: 1,
+          randomInterval: false,
+        }
+      }));
+      
+      setInstancesWithSettings(instancesWithDefaultSettings);
+      
+      // Definir a primeira instância como selecionada
+      if (!currentInstanceId && instancesWithDefaultSettings.length > 0) {
+        setCurrentInstanceId(instancesWithDefaultSettings[0].id);
+        setSettings(instancesWithDefaultSettings[0].settings);
+      }
     }
-  }, [currentInstanceId, instances]);
+  }, [instanciasData, currentInstanceId]);
+
+  // Exibir mensagem de erro se falhar ao carregar instâncias
+  useEffect(() => {
+    if (instanciasError) {
+      toast.error("Erro ao carregar instâncias", {
+        description: "Não foi possível carregar os dados de instâncias do servidor."
+      });
+    }
+  }, [instanciasError]);
 
   const handleInstanceChange = (value: string) => {
     setCurrentInstanceId(value);
+    
+    // Carregar as configurações da instância selecionada
+    const selectedInstance = instancesWithSettings.find(inst => inst.id === value);
+    if (selectedInstance) {
+      setSettings(selectedInstance.settings);
+    }
   };
 
   const handleInputChange = (key: keyof DispatchSettings, value: number | boolean) => {
@@ -71,7 +93,7 @@ export default function Settings() {
     setSettings(updatedSettings);
     
     // Atualiza também o objeto de instâncias
-    setInstances(instances.map(inst => 
+    setInstancesWithSettings(instancesWithSettings.map(inst => 
       inst.id === currentInstanceId 
         ? { ...inst, settings: updatedSettings } 
         : inst
@@ -121,18 +143,22 @@ export default function Settings() {
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="instance">Instância</Label>
-            <Select value={currentInstanceId} onValueChange={handleInstanceChange}>
-              <SelectTrigger className="w-full sm:w-72">
-                <SelectValue placeholder="Selecione a instância" />
-              </SelectTrigger>
-              <SelectContent>
-                {instances.map((instance) => (
-                  <SelectItem key={instance.id} value={instance.id}>
-                    {instance.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {isLoadingInstancias ? (
+              <div className="text-sm text-muted-foreground">Carregando instâncias...</div>
+            ) : (
+              <Select value={currentInstanceId} onValueChange={handleInstanceChange}>
+                <SelectTrigger className="w-full sm:w-72">
+                  <SelectValue placeholder="Selecione a instância" />
+                </SelectTrigger>
+                <SelectContent>
+                  {instancesWithSettings.map((instance) => (
+                    <SelectItem key={instance.id} value={instance.id}>
+                      {instance.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <p className="text-sm text-muted-foreground">
               Escolha a instância para configurar os parâmetros específicos.
             </p>
@@ -201,7 +227,7 @@ export default function Settings() {
 
           <Button 
             onClick={handleSaveSettings} 
-            disabled={isLoading}
+            disabled={isLoading || isLoadingInstancias || instancesWithSettings.length === 0}
             className="w-full sm:w-auto"
           >
             {isLoading ? "Salvando..." : "Salvar Configurações"}

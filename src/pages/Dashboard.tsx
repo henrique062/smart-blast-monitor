@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import StatusCard from "@/components/dashboard/StatusCard";
 import BarChart from "@/components/dashboard/BarChart";
@@ -9,7 +8,9 @@ import {
   fetchRecentDisparos, 
   fetchDisparosPorInstancia,
   fetchDisparosEmAndamento,
-  DisparoData 
+  fetchInstancias,
+  DisparoData,
+  Instancia 
 } from "@/lib/supabase";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
@@ -57,6 +58,16 @@ export default function Dashboard() {
     queryFn: fetchDisparosPorInstancia,
   });
 
+  // Fetch instances from Supabase
+  const {
+    data: instanciasData,
+    isLoading: isLoadingInstancias,
+    error: instanciasError
+  } = useQuery({
+    queryKey: ['instancias'],
+    queryFn: fetchInstancias,
+  });
+
   // Show error toast if fetch fails
   useEffect(() => {
     if (contatosError) {
@@ -82,7 +93,23 @@ export default function Dashboard() {
         description: "Não foi possível carregar a contagem de disparos em andamento."
       });
     }
-  }, [contatosError, disparosError, instanciaCountError, disparosEmAndamentoError]);
+
+    if (instanciasError) {
+      toast.error("Erro ao carregar instâncias", {
+        description: "Não foi possível carregar os dados de instâncias do servidor."
+      });
+    }
+  }, [contatosError, disparosError, instanciaCountError, disparosEmAndamentoError, instanciasError]);
+
+  // Get instance name from ID
+  const getInstanceName = (instanceId: string) => {
+    if (isLoadingInstancias || !instanciasData) {
+      return instanceId; // Return ID if data not loaded yet
+    }
+    
+    const instance = instanciasData.find(inst => inst.id === instanceId);
+    return instance ? instance.formatado : instanceId;
+  };
 
   // Calculate counts based on the criteria
   const pendingBlasts = contatosData ? contatosData.filter(contato => contato.disparo_agendamento === null).length : 0;
@@ -103,11 +130,11 @@ export default function Dashboard() {
       phone: disparo.numero_principal,
       status: disparo.disparo_principal ? "success" : "error",
       date: formattedDate,
-      instance: disparo.instancia
+      instance: getInstanceName(disparo.instancia)
     };
   }) : [];
 
-  const isLoading = isLoadingContatos || isLoadingDisparos || isLoadingInstanciaCount || isLoadingEmAndamento;
+  const isLoading = isLoadingContatos || isLoadingDisparos || isLoadingInstanciaCount || isLoadingEmAndamento || isLoadingInstancias;
 
   return (
     <div className="space-y-6 animate-fade-in">

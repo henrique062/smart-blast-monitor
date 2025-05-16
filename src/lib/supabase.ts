@@ -39,6 +39,14 @@ export interface Template {
   deletado: boolean | null;
 }
 
+// Interface para instâncias
+export interface Instancia {
+  id: string;
+  nome: string;
+  numero: string;
+  formatado: string; // Nome - Número
+}
+
 // Função para buscar todos os contatos
 export async function fetchContatos() {
   const { data, error } = await supabase
@@ -129,6 +137,26 @@ export async function fetchDisparosPorInstancia() {
   }));
 
   return result;
+}
+
+// Função para buscar todas as instâncias
+export async function fetchInstancias() {
+  const { data, error } = await supabase
+    .from('instancias')
+    .select('id, nome, numero');
+
+  if (error) {
+    console.error('Erro ao buscar instâncias:', error);
+    throw error;
+  }
+
+  // Criar o campo formatado com nome e número concatenados
+  const formattedData = data?.map(inst => ({
+    ...inst,
+    formatado: `${inst.nome} - ${inst.numero}`
+  })) || [];
+
+  return formattedData;
 }
 
 // Função para buscar templates ativos
