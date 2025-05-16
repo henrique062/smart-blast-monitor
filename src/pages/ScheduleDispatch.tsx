@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Clock, Play, Stop, Calendar } from "lucide-react";
+import { Clock, Play, Square, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/components/ui/sonner";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -234,7 +233,7 @@ export default function ScheduleDispatch() {
                       <span className="animate-pulse">Parando...</span>
                     ) : (
                       <>
-                        <Stop className="h-4 w-4 mr-1" />
+                        <Square className="h-4 w-4 mr-1" />
                         Parar
                       </>
                     )}
