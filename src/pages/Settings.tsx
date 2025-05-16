@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useQuery } from "@tanstack/react-query";
-import { fetchInstancias, Instancia } from "@/lib/supabase";
+import { useInstancias } from "@/hooks/useInstancias";
 
 interface DispatchSettings {
   dispatchesPerHour: number;
@@ -35,20 +34,17 @@ export default function Settings() {
   
   const [isLoading, setIsLoading] = useState(false);
 
-  // Buscar instâncias do banco de dados
+  // Buscar instâncias do banco de dados usando o hook personalizado
   const { 
-    data: instanciasData, 
+    instancias, 
     isLoading: isLoadingInstancias,
     error: instanciasError
-  } = useQuery({
-    queryKey: ['instancias-settings'],
-    queryFn: fetchInstancias,
-  });
+  } = useInstancias();
 
   // Inicializar as instâncias com configurações padrão
   useEffect(() => {
-    if (instanciasData && instanciasData.length > 0) {
-      const instancesWithDefaultSettings = instanciasData.map(inst => ({
+    if (instancias && instancias.length > 0) {
+      const instancesWithDefaultSettings = instancias.map(inst => ({
         id: inst.id,
         name: inst.formatado,
         settings: {
@@ -67,7 +63,7 @@ export default function Settings() {
         setSettings(instancesWithDefaultSettings[0].settings);
       }
     }
-  }, [instanciasData, currentInstanceId]);
+  }, [instancias, currentInstanceId]);
 
   // Exibir mensagem de erro se falhar ao carregar instâncias
   useEffect(() => {
@@ -110,15 +106,44 @@ export default function Settings() {
     setIsLoading(true);
 
     try {
-      // In a real app, we'd send to API/webhook
-      console.log("Saving settings for instance:", currentInstanceId, settings);
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success("Configurações salvas com sucesso!");
+      // Encontrar a instância selecionada para obter o texto formatado
+      const selectedInstance = instancesWithSettings.find(inst => inst.id === currentInstanceId);
+      const instanceText = selectedInstance ? selectedInstance.name : "";
+
+      // Preparar payload para enviar ao webhook
+      const payload = {
+        instancia: instanceText,
+        disparosPorHora: settings.dispatchesPerHour,
+        intervaloEntreDisparos: settings.interval,
+        limiteDiario: settings.dailyLimit,
+        intervaloAleatorio: settings.randomInterval
+      };
+
+      // Enviar para o webhook
+      const response = await fetch("https://n8n-n8n.wju2x4.easypanel.host/webhook/parametros", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      // Verificar retorno de sucesso
+      if (response.ok || data.status === "200") {
+        toast.success("Configurações salvas com sucesso!");
+      } else {
+        // Em caso de erro, exibir mensagem retornada
+        toast.error("Erro ao salvar configurações", {
+          description: data.message || "Ocorreu um erro ao salvar as configurações."
+        });
+      }
     } catch (error) {
-      console.error("Error saving settings:", error);
-      toast.error("Erro ao salvar configurações");
+      console.error("Erro ao salvar configurações:", error);
+      toast.error("Erro ao salvar configurações", {
+        description: "Não foi possível conectar ao servidor. Verifique sua conexão de internet."
+      });
     } finally {
       setIsLoading(false);
     }
