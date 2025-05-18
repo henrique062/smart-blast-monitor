@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Play, Square, Calendar } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -17,13 +16,15 @@ interface InstanceScheduleCardProps {
   initialTimeEnd: string;
 }
 
-// Define weekday options
+// Define weekday options with Saturday and Sunday added
 const WEEKDAYS = [
   { value: "seg", label: "S", fullName: "Segunda" },
   { value: "ter", label: "T", fullName: "Terça" },
   { value: "qua", label: "Q", fullName: "Quarta" },
   { value: "qui", label: "Q", fullName: "Quinta" },
   { value: "sex", label: "S", fullName: "Sexta" },
+  { value: "sab", label: "S", fullName: "Sábado" },
+  { value: "dom", label: "D", fullName: "Domingo" },
 ];
 
 export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, initialTimeEnd }: InstanceScheduleCardProps) {
@@ -140,7 +141,7 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
             </div>
           </div>
           
-          {/* Weekday selection */}
+          {/* Weekday selection with all 7 days */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Dias da Semana</label>
             <div className="flex flex-wrap gap-3 mt-1">
