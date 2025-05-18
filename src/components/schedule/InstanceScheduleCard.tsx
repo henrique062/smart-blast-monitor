@@ -15,13 +15,20 @@ interface InstanceScheduleCardProps {
   initialTimeEnd: string;
 }
 
+// Define the type for loading states to match what ScheduleActionButtons expects
+interface LoadingStates {
+  manual: boolean;
+  stop: boolean;
+  schedule: boolean;
+}
+
 export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, initialTimeEnd }: InstanceScheduleCardProps) {
   // Local states for this card
   const [startTime, setStartTime] = useState(initialTimeStart);
   const [endTime, setEndTime] = useState(initialTimeEnd);
   const [isActive, setIsActive] = useState(botAtivo);
   const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>(["seg", "ter", "qua", "qui", "sex"]);
-  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({
+  const [loadingStates, setLoadingStates] = useState<LoadingStates>({
     manual: false,
     stop: false,
     schedule: false
@@ -89,7 +96,7 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
       toast.error("Erro ao enviar dados. Verifique sua conexão.");
     } finally {
       // Clear loading state
-      setLoadingStates(prev => ({ ...prev, [action]: false }));
+      setLoadingStates(prev => ({ ...prev, [action]: false } as LoadingStates));
     }
   };
 
