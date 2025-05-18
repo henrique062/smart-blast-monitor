@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Instancia } from "@/lib/supabase";
 
 interface InstanceScheduleCardProps {
@@ -15,11 +17,21 @@ interface InstanceScheduleCardProps {
   initialTimeEnd: string;
 }
 
+// Define weekday options
+const WEEKDAYS = [
+  { value: "seg", label: "S", fullName: "Segunda" },
+  { value: "ter", label: "T", fullName: "Terça" },
+  { value: "qua", label: "Q", fullName: "Quarta" },
+  { value: "qui", label: "Q", fullName: "Quinta" },
+  { value: "sex", label: "S", fullName: "Sexta" },
+];
+
 export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, initialTimeEnd }: InstanceScheduleCardProps) {
   // Local states for this card
   const [startTime, setStartTime] = useState(initialTimeStart);
   const [endTime, setEndTime] = useState(initialTimeEnd);
   const [isActive, setIsActive] = useState(botAtivo);
+  const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>(["seg", "ter", "qua", "qui", "sex"]);
   const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({
     manual: false,
     stop: false,
@@ -28,6 +40,17 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
 
   // Check if any action is in progress
   const isAnyActionInProgress = Object.values(loadingStates).some(state => state);
+
+  // Toggle weekday selection
+  const toggleWeekday = (day: string) => {
+    setSelectedWeekdays(current => {
+      if (current.includes(day)) {
+        return current.filter(d => d !== day);
+      } else {
+        return [...current, day];
+      }
+    });
+  };
 
   // Handle action (manual activation, stopping, or scheduling)
   const handleAction = async (action: 'manual' | 'stop' | 'schedule') => {
@@ -38,9 +61,10 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
     const payload = {
       tipo: action === 'manual' ? 'Manual' : action === 'schedule' ? 'Agendamento' : 'Manual',
       instancia: instance.formatado,
-      instancia_nome: instance.nome,  // Added to match the new structure
+      instancia_nome: instance.nome,
       horario_inicio: startTime || "08:00",
       horario_fim: endTime || "18:00",
+      dias_semana: action !== 'stop' ? selectedWeekdays : [],
       bot_ativo: action !== 'stop'
     };
 
@@ -113,6 +137,30 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
                 onChange={(e) => setEndTime(e.target.value)}
                 disabled={isAnyActionInProgress}
               />
+            </div>
+          </div>
+          
+          {/* Weekday selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Dias da Semana</label>
+            <div className="flex flex-wrap gap-3 mt-1">
+              {WEEKDAYS.map((day) => (
+                <div key={day.value} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`${instance.id}-${day.value}`}
+                    checked={selectedWeekdays.includes(day.value)}
+                    onCheckedChange={() => toggleWeekday(day.value)}
+                    disabled={isAnyActionInProgress}
+                    aria-label={day.fullName}
+                  />
+                  <label 
+                    htmlFor={`${instance.id}-${day.value}`}
+                    className="text-sm font-medium cursor-pointer"
+                  >
+                    {day.label}
+                  </label>
+                </div>
+              ))}
             </div>
           </div>
         </div>

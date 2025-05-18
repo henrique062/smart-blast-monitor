@@ -9,7 +9,7 @@ export default function ScheduleDispatch() {
   // Get instances data using our existing hook
   const { instancias, isLoading: isLoadingInstances } = useInstancias();
   
-  // Get dispatch parameters using our new hook
+  // Get dispatch parameters using our hook
   const { paramsData, isLoadingParams, timeInputs } = useDispatchParams(instancias);
 
   // Determine overall loading state

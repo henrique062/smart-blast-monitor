@@ -10,6 +10,7 @@ export interface DispatchParams {
   bot_ativo: boolean;
   horario_inicio: string | null;
   horario_fim: string | null;
+  dias_semana: string[] | null;
 }
 
 export function useDispatchParams(instancias: Instancia[] | undefined) {
@@ -24,22 +25,27 @@ export function useDispatchParams(instancias: Instancia[] | undefined) {
   const paramsData = allParams && instancias ? processParamsData(allParams, instancias) : {};
   
   // Time inputs state
-  const [timeInputs, setTimeInputs] = useState<Record<string, { start: string; end: string }>>({});
+  const [timeInputs, setTimeInputs] = useState<Record<string, { start: string; end: string; weekdays: string[] }>>({});
   
   // Initialize time inputs when parameters data is loaded
   useEffect(() => {
     if (paramsData && instancias) {
-      const initialTimeInputs: Record<string, { start: string; end: string }> = {};
+      const initialTimeInputs: Record<string, { start: string; end: string; weekdays: string[] }> = {};
       
       instancias.forEach(inst => {
         const params = paramsData[inst.id];
         if (params) {
           initialTimeInputs[inst.id] = {
             start: params.horario_inicio || "08:00",
-            end: params.horario_fim || "18:00"
+            end: params.horario_fim || "18:00",
+            weekdays: params.dias_semana || ["seg", "ter", "qua", "qui", "sex"]
           };
         } else {
-          initialTimeInputs[inst.id] = { start: "08:00", end: "18:00" };
+          initialTimeInputs[inst.id] = { 
+            start: "08:00", 
+            end: "18:00",
+            weekdays: ["seg", "ter", "qua", "qui", "sex"] 
+          };
         }
       });
       
@@ -66,6 +72,7 @@ export function useDispatchParams(instancias: Instancia[] | undefined) {
           bot_ativo: false,
           horario_inicio: "08:00",
           horario_fim: "18:00",
+          dias_semana: ["seg", "ter", "qua", "qui", "sex"],
         };
       }
     });

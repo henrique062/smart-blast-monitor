@@ -47,13 +47,14 @@ export interface Instancia {
   formatado: string; // Nome - Número
 }
 
-// Interface para parâmetros de disparo
+// Interface for parâmetros de disparo
 export interface ParametrosDisparo {
   id: string;
   instancia_nome: string;  // Changed from id_instancia to instancia_nome
   bot_ativo: boolean;
   horario_inicio: string | null;
   horario_fim: string | null;
+  dias_semana: string[] | null;
   created_at: string;
 }
 
