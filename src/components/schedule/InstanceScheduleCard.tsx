@@ -1,12 +1,14 @@
 
 import { useState } from "react";
+import { Play, Square, Calendar } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Instancia } from "@/lib/supabase";
-import { WeekdaySelector } from "./WeekdaySelector";
-import { ScheduleActionButtons } from "./ScheduleActionButtons";
-import { TimeRangeInput } from "./TimeRangeInput";
 
 interface InstanceScheduleCardProps {
   instance: Instancia;
@@ -15,12 +17,14 @@ interface InstanceScheduleCardProps {
   initialTimeEnd: string;
 }
 
-// Define the type for loading states to match what ScheduleActionButtons expects
-interface LoadingStates {
-  manual: boolean;
-  stop: boolean;
-  schedule: boolean;
-}
+// Define weekday options
+const WEEKDAYS = [
+  { value: "seg", label: "S", fullName: "Segunda" },
+  { value: "ter", label: "T", fullName: "Terça" },
+  { value: "qua", label: "Q", fullName: "Quarta" },
+  { value: "qui", label: "Q", fullName: "Quinta" },
+  { value: "sex", label: "S", fullName: "Sexta" },
+];
 
 export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, initialTimeEnd }: InstanceScheduleCardProps) {
   // Local states for this card
@@ -28,7 +32,7 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
   const [endTime, setEndTime] = useState(initialTimeEnd);
   const [isActive, setIsActive] = useState(botAtivo);
   const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>(["seg", "ter", "qua", "qui", "sex"]);
-  const [loadingStates, setLoadingStates] = useState<LoadingStates>({
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({
     manual: false,
     stop: false,
     schedule: false
@@ -96,7 +100,7 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
       toast.error("Erro ao enviar dados. Verifique sua conexão.");
     } finally {
       // Clear loading state
-      setLoadingStates(prev => ({ ...prev, [action]: false } as LoadingStates));
+      setLoadingStates(prev => ({ ...prev, [action]: false }));
     }
   };
 
@@ -115,31 +119,97 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <TimeRangeInput
-            startTime={startTime}
-            endTime={endTime}
-            onStartTimeChange={setStartTime}
-            onEndTimeChange={setEndTime}
-            disabled={isAnyActionInProgress}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Horário de Início</label>
+              <Input 
+                type="time" 
+                value={startTime} 
+                onChange={(e) => setStartTime(e.target.value)}
+                disabled={isAnyActionInProgress}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Horário de Fim</label>
+              <Input 
+                type="time" 
+                value={endTime} 
+                onChange={(e) => setEndTime(e.target.value)}
+                disabled={isAnyActionInProgress}
+              />
+            </div>
+          </div>
           
-          <WeekdaySelector
-            selectedWeekdays={selectedWeekdays}
-            onChange={toggleWeekday}
-            disabled={isAnyActionInProgress}
-            instanceId={instance.id}
-          />
+          {/* Weekday selection */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Dias da Semana</label>
+            <div className="flex flex-wrap gap-3 mt-1">
+              {WEEKDAYS.map((day) => (
+                <div key={day.value} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`${instance.id}-${day.value}`}
+                    checked={selectedWeekdays.includes(day.value)}
+                    onCheckedChange={() => toggleWeekday(day.value)}
+                    disabled={isAnyActionInProgress}
+                    aria-label={day.fullName}
+                  />
+                  <label 
+                    htmlFor={`${instance.id}-${day.value}`}
+                    className="text-sm font-medium cursor-pointer"
+                  >
+                    {day.label}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </CardContent>
       <CardFooter className="flex flex-wrap gap-2">
-        <ScheduleActionButtons
-          onManualActivation={() => handleAction('manual')}
-          onStop={() => handleAction('stop')}
-          onSchedule={() => handleAction('schedule')}
-          isActive={isActive}
-          loadingStates={loadingStates}
-          isAnyActionInProgress={isAnyActionInProgress}
-        />
+        <Button
+          size="sm"
+          onClick={() => handleAction('manual')}
+          disabled={isAnyActionInProgress || isActive}
+        >
+          {loadingStates.manual ? (
+            <span className="animate-pulse">Ativando...</span>
+          ) : (
+            <>
+              <Play className="h-4 w-4 mr-1" />
+              Ativar Manualmente
+            </>
+          )}
+        </Button>
+        <Button
+          size="sm" 
+          variant="destructive"
+          onClick={() => handleAction('stop')}
+          disabled={isAnyActionInProgress || !isActive}
+        >
+          {loadingStates.stop ? (
+            <span className="animate-pulse">Parando...</span>
+          ) : (
+            <>
+              <Square className="h-4 w-4 mr-1" />
+              Parar
+            </>
+          )}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => handleAction('schedule')}
+          disabled={isAnyActionInProgress}
+        >
+          {loadingStates.schedule ? (
+            <span className="animate-pulse">Agendando...</span>
+          ) : (
+            <>
+              <Calendar className="h-4 w-4 mr-1" />
+              Agendar
+            </>
+          )}
+        </Button>
       </CardFooter>
     </Card>
   );
