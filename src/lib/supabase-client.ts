@@ -9,11 +9,44 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 // Create Supabase client with connection handling
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Verify connection and table access on initialization
+async function checkSupabaseConnection() {
+  try {
+    // Check authentication status
+    const { data: authData, error: authError } = await supabase.auth.getSession();
+    if (authError) {
+      console.error('Supabase authentication error:', authError.message);
+      return;
+    }
+    
+    console.log('Supabase auth status:', authData?.session ? 'Authenticated' : 'Not authenticated');
+    
+    // Test table access specifically for 'instancias' table
+    const { data, error } = await supabase
+      .from('instancias')
+      .select('count')
+      .limit(1);
+      
+    if (error) {
+      console.error('Supabase instancias table access error:', error.message);
+      toast.error("Erro de acesso à tabela de instâncias", {
+        description: error.message
+      });
+    } else {
+      console.log('Supabase instancias table access successful');
+    }
+  } catch (err) {
+    console.error('Supabase connection verification error:', err);
+  }
+}
+
 // Test connection on app initialization
 supabase.auth.getSession().then(({ error }) => {
   if (error) {
     console.error('Supabase connection error:', error.message);
   } else {
     console.log('Supabase connection established successfully');
+    // Verify table access
+    checkSupabaseConnection();
   }
 });

@@ -1,10 +1,14 @@
-
 import { supabase } from '../supabase-client';
 import { Instancia, ParametrosDisparo } from '../types';
+
+// Explicitly export types for use by other files
+export type { Instancia, ParametrosDisparo };
 
 // Função para buscar todas as instâncias
 export async function fetchInstancias(): Promise<Instancia[]> {
   try {
+    console.log('Iniciando busca de instâncias...');
+    
     const { data, error } = await supabase
       .from('instancias')
       .select('id, nome, numero');
@@ -14,17 +18,20 @@ export async function fetchInstancias(): Promise<Instancia[]> {
       throw error;
     }
 
+    // Verificar se os dados estão corretos
+    console.log('Resposta da API de instâncias:', data);
+    
     // Criar o campo formatado com nome e número concatenados
     const formattedData = data?.map(inst => ({
       ...inst,
       formatado: `${inst.nome} - ${inst.numero}`
     })) || [];
 
-    console.log('Instâncias carregadas:', formattedData.length);
+    console.log('Instâncias formatadas:', formattedData);
     return formattedData;
   } catch (error) {
     console.error('Exception ao buscar instâncias:', error);
-    return [];
+    throw error; // Re-throw para permitir tratamento de erro no hook
   }
 }
 

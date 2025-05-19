@@ -15,6 +15,9 @@ export function useInstancias() {
     queryKey: ['instancias'],
     queryFn: fetchInstancias,
     retry: 2, // Retry failed requests twice
+    onError: (error) => {
+      console.error("Erro na query de instâncias:", error);
+    }
   });
 
   // Show error notification when fetch fails
@@ -26,6 +29,11 @@ export function useInstancias() {
       });
     }
   }, [error]);
+
+  // Debug loaded data
+  useEffect(() => {
+    console.log("useInstancias hook - instâncias carregadas:", instancias?.length || 0);
+  }, [instancias]);
 
   // Função auxiliar para obter o nome formatado da instância a partir do ID
   const getInstanceNameById = (instanceId: string): string => {
