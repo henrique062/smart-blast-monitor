@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/sonner";
 import { Instancia } from "@/lib/supabase";
-import { WeekdaySelector } from "./WeekdaySelector";
+import { WeekdaySelector, WEEKDAYS } from "./WeekdaySelector";
 import { ScheduleActionButtons } from "./ScheduleActionButtons";
 import { TimeRangeInput } from "./TimeRangeInput";
 
@@ -53,7 +53,7 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
     // Set loading state for this action
     setLoadingStates(prev => ({ ...prev, [action]: true }));
 
-    // Prepare payload
+    // Prepare payload with the correctly formatted days of the week
     const payload = {
       tipo: action === 'manual' ? 'Manual' : action === 'schedule' ? 'Agendamento' : 'Manual',
       instancia: instance.formatado,
@@ -65,6 +65,8 @@ export function InstanceScheduleCard({ instance, botAtivo, initialTimeStart, ini
     };
 
     try {
+      console.log("Sending payload:", payload);
+      
       // Send to webhook
       const response = await fetch('https://n8n-n8n.wju2x4.easypanel.host/webhook/agendamento_disparos', {
         method: 'POST',

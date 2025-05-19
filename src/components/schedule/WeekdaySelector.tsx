@@ -7,7 +7,9 @@ export interface WeekdayOption {
   fullName: string;
 }
 
-// Define weekday options
+// Define weekday options with correct mappings:
+// S = "seg", T = "ter", Q = "qua", Q (2nd) = "qui", 
+// S (2nd) = "sex", S (3rd) = "sab", D = "dom"
 export const WEEKDAYS: WeekdayOption[] = [
   { value: "seg", label: "S", fullName: "Segunda" },
   { value: "ter", label: "T", fullName: "Terça" },
@@ -42,6 +44,7 @@ export function WeekdaySelector({ selectedWeekdays, onChange, disabled, instance
             <label 
               htmlFor={`${instanceId}-${day.value}`}
               className="text-sm font-medium cursor-pointer"
+              title={day.fullName}
             >
               {day.label}
             </label>
