@@ -29,29 +29,31 @@ export function useDispatchParams(instancias: Instancia[] | undefined) {
   
   // Initialize time inputs when parameters data is loaded
   useEffect(() => {
-    if (paramsData && instancias) {
-      const initialTimeInputs: Record<string, { start: string; end: string; weekdays: string[] }> = {};
-      
-      instancias.forEach(inst => {
-        const params = paramsData[inst.id];
-        if (params) {
-          initialTimeInputs[inst.id] = {
-            start: params.horario_inicio || "08:00",
-            end: params.horario_fim || "18:00",
-            weekdays: params.dias_semana || ["seg", "ter", "qua", "qui", "sex"]
-          };
-        } else {
-          initialTimeInputs[inst.id] = { 
-            start: "08:00", 
-            end: "18:00",
-            weekdays: ["seg", "ter", "qua", "qui", "sex"] 
-          };
-        }
-      });
-      
-      setTimeInputs(initialTimeInputs);
+    if (!instancias || instancias.length === 0) {
+      return; // Exit early if no instances
     }
-  }, [paramsData, instancias, allParams]); // Adicionado allParams como dependência
+    
+    const initialTimeInputs: Record<string, { start: string; end: string; weekdays: string[] }> = {};
+    
+    instancias.forEach(inst => {
+      const params = paramsData[inst.id];
+      if (params) {
+        initialTimeInputs[inst.id] = {
+          start: params.horario_inicio || "08:00",
+          end: params.horario_fim || "18:00",
+          weekdays: params.dias_semana || ["seg", "ter", "qua", "qui", "sex"]
+        };
+      } else {
+        initialTimeInputs[inst.id] = { 
+          start: "08:00", 
+          end: "18:00",
+          weekdays: ["seg", "ter", "qua", "qui", "sex"] 
+        };
+      }
+    });
+    
+    setTimeInputs(initialTimeInputs);
+  }, [paramsData, instancias]); // Removed allParams as dependency to prevent additional renders
 
   // Helper function to process and match params with instances
   function processParamsData(params: DispatchParams[], instances: Instancia[]): Record<string, DispatchParams> {

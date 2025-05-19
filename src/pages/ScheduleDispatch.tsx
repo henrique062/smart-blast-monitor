@@ -1,19 +1,29 @@
 
-import { Clock } from "lucide-react";
+import { Clock, AlertCircle } from "lucide-react";
 import { useInstancias } from "@/hooks/useInstancias";
 import { useDispatchParams } from "@/hooks/useDispatchParams";
 import { InstanceScheduleCard } from "@/components/schedule/InstanceScheduleCard";
 import { InstanceScheduleSkeleton } from "@/components/schedule/InstanceScheduleSkeleton";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useEffect } from "react";
 
 export default function ScheduleDispatch() {
   // Get instances data using our existing hook
-  const { instancias, isLoading: isLoadingInstances } = useInstancias();
+  const { instancias, isLoading: isLoadingInstances, error: instancesError, refetch: refetchInstances } = useInstancias();
   
   // Get dispatch parameters using our hook
   const { paramsData, isLoadingParams, timeInputs } = useDispatchParams(instancias);
 
   // Determine overall loading state
   const isLoading = isLoadingInstances || isLoadingParams;
+  const hasError = !!instancesError;
+
+  // Log data for debugging
+  useEffect(() => {
+    console.log("Instâncias carregadas:", instancias?.length || 0);
+    console.log("Parâmetros carregados:", Object.keys(paramsData || {}).length);
+  }, [instancias, paramsData]);
 
   return (
     <div className="space-y-6">
@@ -23,6 +33,19 @@ export default function ScheduleDispatch() {
           <p className="text-muted-foreground">Configure o agendamento de disparos para suas instâncias</p>
         </div>
       </div>
+
+      {hasError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro de conexão</AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span>Não foi possível carregar os dados das instâncias.</span>
+            <Button variant="outline" size="sm" onClick={() => refetchInstances()}>
+              Tentar novamente
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {isLoading ? (
         <div className="grid gap-4 grid-cols-1">
@@ -50,7 +73,14 @@ export default function ScheduleDispatch() {
         </div>
       ) : (
         <div className="text-center py-10">
-          <p className="text-muted-foreground">Nenhuma instância encontrada</p>
+          <p className="text-muted-foreground">Nenhuma instância encontrada no banco de dados.</p>
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={() => refetchInstances()}
+          >
+            Tentar novamente
+          </Button>
         </div>
       )}
     </div>

@@ -1,10 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 
 // Supabase connection details
 const supabaseUrl = 'https://gyheyxmcrbxsexobnipy.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5aGV5eG1jcmJ4c2V4b2JuaXB5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NjQ1ODA1MSwiZXhwIjoyMDYyMDM0MDUxfQ.pxmGVv0Oz85M2i-Y_5PmGN9Tc-aNd-7Mh3LqDoZYnL8';
 
+// Create Supabase client with connection handling
 export const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Test connection on app initialization
+supabase.auth.getSession().then(({ error }) => {
+  if (error) {
+    console.error('Supabase connection error:', error.message);
+  } else {
+    console.log('Supabase connection established successfully');
+  }
+});
 
 // Tipos para os contatos
 export interface ContatoPrecatorio {
@@ -60,16 +71,21 @@ export interface ParametrosDisparo {
 
 // Função para buscar todos os contatos
 export async function fetchContatos() {
-  const { data, error } = await supabase
-    .from('contatos_precatorios')
-    .select('telefone_principal, nome_completo, disparo_realizado, disparo_agendamento');
+  try {
+    const { data, error } = await supabase
+      .from('contatos_precatorios')
+      .select('telefone_principal, nome_completo, disparo_realizado, disparo_agendamento');
 
-  if (error) {
-    console.error('Erro ao buscar contatos:', error);
-    throw error;
+    if (error) {
+      console.error('Erro ao buscar contatos:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Exception ao buscar contatos:', error);
+    return [];
   }
-
-  return data || [];
 }
 
 // Função específica para buscar disparos em andamento
@@ -152,36 +168,48 @@ export async function fetchDisparosPorInstancia() {
 
 // Função para buscar todas as instâncias
 export async function fetchInstancias() {
-  const { data, error } = await supabase
-    .from('instancias')
-    .select('id, nome, numero');
+  try {
+    const { data, error } = await supabase
+      .from('instancias')
+      .select('id, nome, numero');
 
-  if (error) {
-    console.error('Erro ao buscar instâncias:', error);
-    throw error;
+    if (error) {
+      console.error('Erro ao buscar instâncias:', error);
+      throw error;
+    }
+
+    // Criar o campo formatado com nome e número concatenados
+    const formattedData = data?.map(inst => ({
+      ...inst,
+      formatado: `${inst.nome} - ${inst.numero}`
+    })) || [];
+
+    console.log('Instâncias carregadas:', formattedData.length);
+    return formattedData;
+  } catch (error) {
+    console.error('Exception ao buscar instâncias:', error);
+    return [];
   }
-
-  // Criar o campo formatado com nome e número concatenados
-  const formattedData = data?.map(inst => ({
-    ...inst,
-    formatado: `${inst.nome} - ${inst.numero}`
-  })) || [];
-
-  return formattedData;
 }
 
 // Função para buscar parâmetros de disparo
 export async function fetchParametrosDisparo() {
-  const { data, error } = await supabase
-    .from('parametros_disparo')
-    .select('*');
+  try {
+    const { data, error } = await supabase
+      .from('parametros_disparo')
+      .select('*');
 
-  if (error) {
-    console.error('Erro ao buscar parâmetros de disparo:', error);
-    throw error;
+    if (error) {
+      console.error('Erro ao buscar parâmetros de disparo:', error);
+      throw error;
+    }
+
+    console.log('Parâmetros de disparo carregados:', data?.length || 0);
+    return data || [];
+  } catch (error) {
+    console.error('Exception ao buscar parâmetros de disparo:', error);
+    return [];
   }
-
-  return data || [];
 }
 
 // Função para buscar parâmetros de disparo de uma instância específica
@@ -217,17 +245,23 @@ export async function updateParametrosDisparo(params: Partial<ParametrosDisparo>
 
 // Função para buscar templates ativos
 export async function fetchTemplates() {
-  const { data, error } = await supabase
-    .from('templates')
-    .select('*')
-    .or('deletado.is.null,deletado.eq.false');
+  try {
+    const { data, error } = await supabase
+      .from('templates')
+      .select('*')
+      .or('deletado.is.null,deletado.eq.false');
 
-  if (error) {
-    console.error('Erro ao buscar templates:', error);
-    throw error;
+    if (error) {
+      console.error('Erro ao buscar templates:', error);
+      throw error;
+    }
+
+    console.log('Templates carregados:', data?.length || 0);
+    return data || [];
+  } catch (error) {
+    console.error('Exception ao buscar templates:', error);
+    return [];
   }
-
-  return data || [];
 }
 
 // Função para atualizar o status de um template
