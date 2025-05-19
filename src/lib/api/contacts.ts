@@ -2,6 +2,9 @@
 import { supabase } from '../supabase-client';
 import { ContatoPrecatorio, DisparoData, InstanciaCount } from '../types';
 
+// Re-export the types needed by other files
+export type { ContatoPrecatorio, DisparoData, InstanciaCount };
+
 // Função para buscar todos os contatos
 export async function fetchContatos(): Promise<ContatoPrecatorio[]> {
   try {

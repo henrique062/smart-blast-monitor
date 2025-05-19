@@ -2,6 +2,9 @@
 import { supabase } from '../supabase-client';
 import { Template } from '../types';
 
+// Re-export the Template type
+export type { Template };
+
 // Função para buscar templates ativos
 export async function fetchTemplates(): Promise<Template[]> {
   try {
