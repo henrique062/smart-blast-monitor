@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Instancia, fetchParametrosDisparo } from "@/lib/supabase";
+import { Instancia, fetchParametrosDisparo } from "@/lib/supabase"; // This still works because of re-exports
+import { ParametrosDisparo } from "@/lib/types";
 
-// Define the parameter types
+// Define the parameter types - re-exported for backward compatibility
 export interface DispatchParams {
   id: string;
   instancia_nome: string;
@@ -53,11 +54,11 @@ export function useDispatchParams(instancias: Instancia[] | undefined) {
     });
     
     setTimeInputs(initialTimeInputs);
-  }, [paramsData, instancias]); // Removed allParams as dependency to prevent additional renders
+  }, [paramsData, instancias, allParams]); // Added allParams as dependency to prevent additional renders
 
   // Helper function to process and match params with instances
-  function processParamsData(params: DispatchParams[], instances: Instancia[]): Record<string, DispatchParams> {
-    const result: Record<string, DispatchParams> = {};
+  function processParamsData(params: ParametrosDisparo[], instances: Instancia[]): Record<string, ParametrosDisparo> {
+    const result: Record<string, ParametrosDisparo> = {};
     
     instances.forEach(instance => {
       // Find matching params by instance name
@@ -75,6 +76,7 @@ export function useDispatchParams(instancias: Instancia[] | undefined) {
           horario_inicio: "08:00",
           horario_fim: "18:00",
           dias_semana: ["seg", "ter", "qua", "qui", "sex"],
+          created_at: new Date().toISOString()
         };
       }
     });

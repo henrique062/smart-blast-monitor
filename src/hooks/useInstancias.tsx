@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchInstancias, Instancia } from "@/lib/supabase";
+import { fetchInstancias, Instancia } from "@/lib/supabase"; // This still works because of re-exports
 import { toast } from "sonner";
 import { useEffect } from "react";
 
