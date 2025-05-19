@@ -51,7 +51,7 @@ export function useDispatchParams(instancias: Instancia[] | undefined) {
       
       setTimeInputs(initialTimeInputs);
     }
-  }, [paramsData, instancias]);
+  }, [paramsData, instancias, allParams]); // Adicionado allParams como dependência
 
   // Helper function to process and match params with instances
   function processParamsData(params: DispatchParams[], instances: Instancia[]): Record<string, DispatchParams> {

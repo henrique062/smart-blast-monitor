@@ -30,22 +30,27 @@ export default function ScheduleDispatch() {
             <InstanceScheduleSkeleton key={i} />
           ))}
         </div>
-      ) : (
+      ) : instancias && instancias.length > 0 ? (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {instancias?.map(instance => {
+          {instancias.map(instance => {
             const params = paramsData?.[instance.id];
             const botAtivo = params?.bot_ativo || false;
+            const timeInput = timeInputs[instance.id] || { start: "08:00", end: "18:00" };
             
             return (
               <InstanceScheduleCard 
                 key={instance.id}
                 instance={instance}
                 botAtivo={botAtivo}
-                initialTimeStart={timeInputs[instance.id]?.start || "08:00"} 
-                initialTimeEnd={timeInputs[instance.id]?.end || "18:00"}
+                initialTimeStart={timeInput.start} 
+                initialTimeEnd={timeInput.end}
               />
             );
           })}
+        </div>
+      ) : (
+        <div className="text-center py-10">
+          <p className="text-muted-foreground">Nenhuma instância encontrada</p>
         </div>
       )}
     </div>
