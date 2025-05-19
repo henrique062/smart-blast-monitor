@@ -1,10 +1,9 @@
 
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Instancia, fetchParametrosDisparo } from "@/lib/supabase"; // This still works because of re-exports
-import { ParametrosDisparo } from "@/lib/types";
+import { Instancia, fetchParametrosDisparo } from "@/lib/supabase";
 
-// Define the parameter types - re-exported for backward compatibility
+// Define the parameter types
 export interface DispatchParams {
   id: string;
   instancia_nome: string;
@@ -30,35 +29,33 @@ export function useDispatchParams(instancias: Instancia[] | undefined) {
   
   // Initialize time inputs when parameters data is loaded
   useEffect(() => {
-    if (!instancias || instancias.length === 0) {
-      return; // Exit early if no instances
+    if (paramsData && instancias) {
+      const initialTimeInputs: Record<string, { start: string; end: string; weekdays: string[] }> = {};
+      
+      instancias.forEach(inst => {
+        const params = paramsData[inst.id];
+        if (params) {
+          initialTimeInputs[inst.id] = {
+            start: params.horario_inicio || "08:00",
+            end: params.horario_fim || "18:00",
+            weekdays: params.dias_semana || ["seg", "ter", "qua", "qui", "sex"]
+          };
+        } else {
+          initialTimeInputs[inst.id] = { 
+            start: "08:00", 
+            end: "18:00",
+            weekdays: ["seg", "ter", "qua", "qui", "sex"] 
+          };
+        }
+      });
+      
+      setTimeInputs(initialTimeInputs);
     }
-    
-    const initialTimeInputs: Record<string, { start: string; end: string; weekdays: string[] }> = {};
-    
-    instancias.forEach(inst => {
-      const params = paramsData[inst.id];
-      if (params) {
-        initialTimeInputs[inst.id] = {
-          start: params.horario_inicio || "08:00",
-          end: params.horario_fim || "18:00",
-          weekdays: params.dias_semana || ["seg", "ter", "qua", "qui", "sex"]
-        };
-      } else {
-        initialTimeInputs[inst.id] = { 
-          start: "08:00", 
-          end: "18:00",
-          weekdays: ["seg", "ter", "qua", "qui", "sex"] 
-        };
-      }
-    });
-    
-    setTimeInputs(initialTimeInputs);
-  }, [paramsData, instancias, allParams]); // Added allParams as dependency to prevent additional renders
+  }, [paramsData, instancias]);
 
   // Helper function to process and match params with instances
-  function processParamsData(params: ParametrosDisparo[], instances: Instancia[]): Record<string, ParametrosDisparo> {
-    const result: Record<string, ParametrosDisparo> = {};
+  function processParamsData(params: DispatchParams[], instances: Instancia[]): Record<string, DispatchParams> {
+    const result: Record<string, DispatchParams> = {};
     
     instances.forEach(instance => {
       // Find matching params by instance name
@@ -76,7 +73,6 @@ export function useDispatchParams(instancias: Instancia[] | undefined) {
           horario_inicio: "08:00",
           horario_fim: "18:00",
           dias_semana: ["seg", "ter", "qua", "qui", "sex"],
-          created_at: new Date().toISOString()
         };
       }
     });

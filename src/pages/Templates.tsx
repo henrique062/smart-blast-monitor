@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { 
   fetchTemplates,
   Template 
-} from "@/lib/api/templates";
+} from "@/lib/supabase";
 import { NewTemplateForm } from "@/components/templates/NewTemplateForm";
 import { TemplatesList } from "@/components/templates/TemplatesList";
 

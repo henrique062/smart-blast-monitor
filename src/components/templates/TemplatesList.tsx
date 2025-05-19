@@ -1,5 +1,5 @@
 
-import { Template } from "@/lib/types";
+import { Template } from "@/lib/supabase";
 import { TemplateCard } from "./TemplateCard";
 
 interface TemplatesListProps {
