@@ -22,42 +22,44 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={
-            <ProtectedRoute>
-              <DashboardLayout><Dashboard /></DashboardLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/templates" element={
-            <ProtectedRoute>
-              <DashboardLayout><Templates /></DashboardLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/contacts" element={
-            <ProtectedRoute>
-              <DashboardLayout><Contacts /></DashboardLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/schedule-dispatch" element={
-            <ProtectedRoute>
-              <DashboardLayout><ScheduleDispatch /></DashboardLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/settings" element={
-            <ProtectedRoute>
-              <DashboardLayout><Settings /></DashboardLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/import" element={
-            <ProtectedRoute>
-              <DashboardLayout><Import /></DashboardLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster />
-        <Sonner />
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <DashboardLayout><Dashboard /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/templates" element={
+              <ProtectedRoute>
+                <DashboardLayout><Templates /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/contacts" element={
+              <ProtectedRoute>
+                <DashboardLayout><Contacts /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/schedule-dispatch" element={
+              <ProtectedRoute>
+                <DashboardLayout><ScheduleDispatch /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <DashboardLayout><Settings /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/import" element={
+              <ProtectedRoute>
+                <DashboardLayout><Import /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+          <Sonner />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

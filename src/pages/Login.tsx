@@ -1,43 +1,65 @@
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { Eye, EyeOff, User, Lock } from "lucide-react";
 
 export default function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [errors, setErrors] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
+  const { login, isLoading } = useAuth();
+
+  // Basic email validation
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isValid = emailRegex.test(email);
+    
+    if (!email) {
+      setErrors(prev => ({ ...prev, email: "Email é obrigatório" }));
+      return false;
+    } else if (!isValid) {
+      setErrors(prev => ({ ...prev, email: "Email inválido" }));
+      return false;
+    }
+    
+    setErrors(prev => ({ ...prev, email: "" }));
+    return true;
+  };
+
+  // Password validation - just checking if it's not empty for now
+  const validatePassword = (password: string): boolean => {
+    if (!password) {
+      setErrors(prev => ({ ...prev, password: "Senha é obrigatória" }));
+      return false;
+    }
+    
+    setErrors(prev => ({ ...prev, password: "" }));
+    return true;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!username || !password) {
-      toast.error("Por favor, preencha todos os campos");
+    // Validate inputs before submission
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+    
+    if (!isEmailValid || !isPasswordValid) {
       return;
     }
 
-    setIsLoading(true);
-    
     try {
-      // In a real app, this would call an authentication API
-      // For this demo, we'll simulate a successful login after a delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Store authentication state (in a real app, you would store a token)
-      localStorage.setItem("isAuthenticated", "true");
-      
-      // Redirect to dashboard
-      navigate("/");
-      toast.success("Login realizado com sucesso!");
+      // Call the login method from useAuth hook
+      await login(email, password);
     } catch (error) {
-      toast.error("Falha ao realizar login. Verifique suas credenciais.");
-    } finally {
-      setIsLoading(false);
+      // Error handling is done inside the login function
+      console.error("Login error:", error);
     }
   };
 
@@ -77,27 +99,58 @@ export default function Login() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="username">Usuário</Label>
-                <Input
-                  id="username"
-                  placeholder="Digite seu usuário"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  autoComplete="username"
-                />
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Digite seu email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (errors.email) validateEmail(e.target.value);
+                    }}
+                    className={`pl-10 ${errors.email ? 'border-red-500' : ''}`}
+                    onBlur={() => validateEmail(email)}
+                    required
+                    autoComplete="email"
+                  />
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                </div>
+                {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
               </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Digite sua senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Digite sua senha"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (errors.password) validatePassword(e.target.value);
+                    }}
+                    className={`pl-10 ${errors.password ? 'border-red-500' : ''}`}
+                    onBlur={() => validatePassword(password)}
+                    required
+                    autoComplete="current-password"
+                  />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <button 
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)} 
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+                {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
               </div>
             </CardContent>
             <CardFooter>
