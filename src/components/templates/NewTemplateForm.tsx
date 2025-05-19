@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Template } from "@/lib/supabase";
+import { Template } from "@/lib/types";
 import { v4 as uuidv4 } from "uuid";
 
 interface NewTemplateFormProps {
