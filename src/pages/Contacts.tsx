@@ -5,7 +5,7 @@ import DataTable, { ColumnDef, StatusType, getStatusBadge } from "@/components/d
 import { Input } from "@/components/ui/input";
 import { Search, Check, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { ContatoPrecatorio, fetchContatos, searchContatos } from "@/lib/supabase";
+import { ContatoPrecatorio, fetchContatos, searchContatos, fetchDisparosEmAndamento } from "@/lib/api/contacts";
 import { toast } from "sonner";
 
 // Interface para mapear os dados do Supabase para o formato da tabela

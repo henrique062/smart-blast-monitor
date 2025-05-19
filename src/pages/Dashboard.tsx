@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import StatusCard from "@/components/dashboard/StatusCard";
 import BarChart from "@/components/dashboard/BarChart";
@@ -7,11 +8,10 @@ import {
   fetchContatos, 
   fetchRecentDisparos, 
   fetchDisparosPorInstancia,
-  fetchDisparosEmAndamento,
-  fetchInstancias,
-  DisparoData,
-  Instancia 
-} from "@/lib/supabase";
+  fetchDisparosEmAndamento
+} from "@/lib/api/contacts";
+import { fetchInstancias } from "@/lib/api/instances";
+import { DisparoData, Instancia } from "@/lib/types";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
