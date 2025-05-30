@@ -145,7 +145,7 @@ export default function ConnectWhatsApp() {
           <CardContent className="flex justify-center">
             <div className="bg-white p-4 rounded-lg shadow-sm">
               <img 
-                src={qrCode} 
+                src={`data:image/png;base64,${qrCode}`} 
                 alt="QR Code para conectar WhatsApp"
                 className="max-w-xs w-full h-auto"
               />
