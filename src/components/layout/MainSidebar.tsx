@@ -110,7 +110,7 @@ export default function MainSidebar() {
 
       {/* Footer */}
       <div className="p-4 border-t border-border text-xs text-muted-foreground">
-        {!isCollapsed && <div>@Henrique062<br />Versão 1.2.0</div>}
+        {!isCollapsed && <div>@Henrique062<br />Versão 1.4.0</div>}
       </div>
     </div>
   );
