@@ -14,6 +14,7 @@ import Contacts from "./pages/Contacts";
 import Settings from "./pages/Settings";
 import Import from "./pages/Import";
 import ScheduleDispatch from "./pages/ScheduleDispatch";
+import ConnectWhatsApp from "./pages/ConnectWhatsApp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,11 @@ const App = () => (
             <Route path="/schedule-dispatch" element={
               <ProtectedRoute>
                 <DashboardLayout><ScheduleDispatch /></DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/connect-whatsapp" element={
+              <ProtectedRoute>
+                <DashboardLayout><ConnectWhatsApp /></DashboardLayout>
               </ProtectedRoute>
             } />
             <Route path="/settings" element={

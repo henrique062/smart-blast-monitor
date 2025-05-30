@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { BarChart, FileText, Settings, Users, Upload, Menu, Clock, LogOut } from "lucide-react";
+import { BarChart, FileText, Settings, Users, Upload, Menu, Clock, LogOut, Smartphone } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -64,6 +64,7 @@ export default function MainSidebar() {
     { icon: FileText, label: "Templates", href: "/templates" },
     { icon: Users, label: "Contatos", href: "/contacts" },
     { icon: Clock, label: "Agendamento de Disparos", href: "/schedule-dispatch" },
+    { icon: Smartphone, label: "Conectar WhatsApp", href: "/connect-whatsapp" },
     { icon: Settings, label: "Configurações", href: "/settings" },
     { icon: Upload, label: "Importar", href: "/import" },
   ];
